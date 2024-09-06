@@ -354,7 +354,9 @@ impl ValueWire {
 }
 
 fn tree_sum(values: &[ValueWire]) -> ValueWire {
-    if values.len() == 1 {
+    if values.len() == 0 {
+        ValueWire::new_const(0, &values[0].id_gen)
+    } else if values.len() == 1 {
         values[0].clone()
     } else {
         let mid = values.len() / 2;
