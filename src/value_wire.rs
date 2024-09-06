@@ -40,7 +40,7 @@ impl ValueWire {
         }
     }
 
-    pub fn new_const(mut value: u64, id_gen: &Rc<RefCell<IdGenerator>>) -> Self {
+    pub fn new_const(mut value: usize, id_gen: &Rc<RefCell<IdGenerator>>) -> Self {
         let mut bits = Vec::new();
 
         while value > 0 {
@@ -115,6 +115,10 @@ impl ValueWire {
     }
 
     pub fn resize(&self, size: usize) -> ValueWire {
+        if size == self.bits.len() {
+            return self.clone();
+        }
+
         ValueWire {
             id_gen: self.id_gen.clone(),
             bits: (0..size).map(|i| self.at(i)).collect(),
@@ -181,6 +185,171 @@ impl ValueWire {
         }
 
         tree_sum(&sum_terms)
+    }
+
+    fn split_at(&self, split_point: usize) -> (ValueWire, ValueWire) {
+        if self.bits.len() <= split_point {
+            return (self.clone(), ValueWire::new_const(0, &self.id_gen));
+        }
+
+        let left = ValueWire {
+            id_gen: self.id_gen.clone(),
+            bits: self.bits[..split_point].to_vec(),
+        };
+
+        let right = ValueWire {
+            id_gen: self.id_gen.clone(),
+            bits: self.bits[split_point..].to_vec(),
+        };
+
+        (left, right)
+    }
+
+    // eq, lt
+    fn cmp(a: &ValueWire, b: &ValueWire) -> (Rc<BoolWire>, Rc<BoolWire>) {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+
+        if size == 0 {
+            return (
+                Rc::new(BoolWire {
+                    id_gen: a.id_gen.clone(),
+                    data: BoolData::Const(false),
+                }),
+                Rc::new(BoolWire {
+                    id_gen: a.id_gen.clone(),
+                    data: BoolData::Const(false),
+                }),
+            );
+        }
+
+        if size == 1 {
+            return (
+                BoolWire::not(&BoolWire::xor(&a.at(0), &b.at(0))),
+                BoolWire::and(&BoolWire::not(&a.at(0)), &b.at(0)),
+            );
+        }
+
+        let (a0, a1) = a.split_at(size / 2);
+        let (b0, b1) = b.split_at(size / 2);
+
+        let (eq0, lt0) = ValueWire::cmp(&a0, &b0);
+        let (eq1, lt1) = ValueWire::cmp(&a1, &b1);
+
+        let eq = BoolWire::and(&eq0, &eq1);
+        let lt = BoolWire::or(&lt1, &BoolWire::and(&eq1, &lt0));
+
+        (eq, lt)
+    }
+
+    pub fn less_than(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        let (_eq, lt) = ValueWire::cmp(a, b);
+
+        lt
+    }
+
+    pub fn greater_than(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        ValueWire::less_than(b, a)
+    }
+
+    pub fn less_than_or_eq(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::not(&ValueWire::greater_than(a, b))
+    }
+
+    pub fn greater_than_or_eq(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::not(&ValueWire::less_than(a, b))
+    }
+
+    pub fn equal(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+
+        if size == 0 {
+            return Rc::new(BoolWire {
+                id_gen: a.id_gen.clone(),
+                data: BoolData::Const(true),
+            });
+        }
+
+        if size == 1 {
+            return BoolWire::not(&BoolWire::xor(&a.at(0), &b.at(0)));
+        }
+
+        let (a0, a1) = a.split_at(size / 2);
+        let (b0, b1) = b.split_at(size / 2);
+
+        let eq0 = ValueWire::equal(&a0, &b0);
+        let eq1 = ValueWire::equal(&a1, &b1);
+
+        BoolWire::and(&eq0, &eq1)
+    }
+
+    pub fn not_equal(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::not(&ValueWire::equal(a, b))
+    }
+
+    pub fn to_bool(&self) -> Rc<BoolWire> {
+        if self.bits.len() == 0 {
+            return Rc::new(BoolWire {
+                id_gen: self.id_gen.clone(),
+                data: BoolData::Const(false),
+            });
+        }
+
+        if self.bits.len() == 1 {
+            return self.bits[0].clone();
+        }
+
+        let (left, right) = self.split_at(self.bits.len() / 2);
+
+        BoolWire::or(&left.to_bool(), &right.to_bool())
+    }
+
+    pub fn bool_and(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::and(&a.to_bool(), &b.to_bool())
+    }
+
+    pub fn bool_or(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::or(&a.to_bool(), &b.to_bool())
+    }
+
+    pub fn bool_not(a: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::not(&a.to_bool())
+    }
+
+    pub fn bool_xor(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
+        BoolWire::xor(&a.to_bool(), &b.to_bool())
+    }
+
+    pub fn bit_and(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+
+        ValueWire {
+            id_gen: a.id_gen.clone(),
+            bits: (0..size)
+                .map(|i| BoolWire::and(&a.at(i), &b.at(i)))
+                .collect(),
+        }
+    }
+
+    pub fn bit_or(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+
+        ValueWire {
+            id_gen: a.id_gen.clone(),
+            bits: (0..size)
+                .map(|i| BoolWire::or(&a.at(i), &b.at(i)))
+                .collect(),
+        }
+    }
+
+    pub fn bit_xor(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+
+        ValueWire {
+            id_gen: a.id_gen.clone(),
+            bits: (0..size)
+                .map(|i| BoolWire::xor(&a.at(i), &b.at(i)))
+                .collect(),
+        }
     }
 }
 

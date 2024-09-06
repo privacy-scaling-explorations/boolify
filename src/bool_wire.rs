@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{circuit_input::CircuitInput, id_generator::IdGenerator};
+use crate::{circuit_input::CircuitInput, id_generator::IdGenerator, value_wire::ValueWire};
 
 pub enum BoolData {
     Const(bool),
@@ -17,6 +17,13 @@ pub struct BoolWire {
 }
 
 impl BoolWire {
+    pub fn as_value(a: &Rc<BoolWire>) -> ValueWire {
+        ValueWire {
+            id_gen: a.id_gen.clone(),
+            bits: vec![a.clone()],
+        }
+    }
+
     pub fn and(a: &Rc<BoolWire>, b: &Rc<BoolWire>) -> Rc<BoolWire> {
         match &a.data {
             BoolData::Const(false) => return a.clone(),
