@@ -24,6 +24,17 @@ impl BoolWire {
         }
     }
 
+    pub fn id(&self) -> Option<usize> {
+        match &self.data {
+            BoolData::Const(_) => None,
+            BoolData::Input(id, _) => Some(*id),
+            BoolData::And(id, _, _) => Some(*id),
+            BoolData::Or(id, _, _) => Some(*id),
+            BoolData::Not(id, _) => Some(*id),
+            BoolData::Xor(id, _, _) => Some(*id),
+        }
+    }
+
     pub fn and(a: &Rc<BoolWire>, b: &Rc<BoolWire>) -> Rc<BoolWire> {
         match &a.data {
             BoolData::Const(false) => return a.clone(),

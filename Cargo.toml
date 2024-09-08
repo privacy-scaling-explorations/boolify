@@ -4,3 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bristol-circuit = { git = "https://github.com/voltrevo/bristol-circuit", rev = "30a43ef" }
