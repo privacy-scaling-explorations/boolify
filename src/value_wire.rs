@@ -136,6 +136,10 @@ impl ValueWire {
     }
 
     pub fn shift_up_const(&self, amount: usize) -> ValueWire {
+        if amount >= self.bits.len() {
+            return ValueWire::new_const(0, &self.id_gen);
+        }
+
         let mut bits = Vec::with_capacity(self.bits.len());
 
         for _ in 0..amount {
