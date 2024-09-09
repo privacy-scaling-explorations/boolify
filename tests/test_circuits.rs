@@ -21,8 +21,8 @@ fn test_2bit_add() {
         bristol_string,
         vec![
             "4 8",
-            "2 1 1", // FIXME: Should be 2 2 2
-            "1 1",   // FIXME: Should be 1 2
+            "2 2 2",
+            "1 2",
             "",
             "2 1 1 3 7 XOR",
             "2 1 0 2 4 XOR",
@@ -53,8 +53,8 @@ fn test_2bit_mul() {
         bristol_string,
         vec![
             "4 8",
-            "2 1 1", // FIXME: Should be 2 2 2
-            "1 1",   // FIXME: Should be 1 2
+            "2 2 2",
+            "1 2",
             "",
             "2 1 1 3 7 AND",
             "2 1 1 2 4 AND",

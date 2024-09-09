@@ -12,7 +12,7 @@ dependencies = [
 [[package]]
 name = "bristol-circuit"
 version = "0.1.0"
-source = "git+https://github.com/voltrevo/bristol-circuit?rev=30a43ef#30a43ef9c262d8345e765e2b86e96798f534f2bc"
+source = "git+https://github.com/voltrevo/bristol-circuit?rev=2a8b001#2a8b001a80ffc0370c641ccc0ed5bf5c04aea9cc"
 dependencies = [
  "serde",
  "serde_json",

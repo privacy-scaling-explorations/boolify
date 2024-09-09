@@ -169,8 +169,6 @@ impl ValueWire {
     }
 
     pub fn mul(a: &ValueWire, b: &ValueWire) -> ValueWire {
-        let size = std::cmp::max(a.bits.len(), b.bits.len());
-
         let (sm, lg) = if a.bits.len() <= b.bits.len() {
             (a, b)
         } else {

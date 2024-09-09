@@ -68,11 +68,20 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             .insert(output.name.clone(), id);
     }
 
-    // TODO: represent io bit widths
+    let input_widths = inputs
+        .values()
+        .map(|input| input.size)
+        .collect::<Vec<usize>>();
+
+    let output_widths = outputs
+        .iter()
+        .map(|output| output.value.bits.len())
+        .collect::<Vec<usize>>();
 
     BristolCircuit {
         wire_count: wire_id_mapper.map.len(),
         info,
+        io_widths: Some((input_widths, output_widths)),
         gates,
     }
 }
