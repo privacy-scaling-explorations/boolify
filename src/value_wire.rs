@@ -178,6 +178,10 @@ impl ValueWire {
         let mut sum_terms = Vec::new();
 
         for i in 0..sm.bits.len() {
+            if let BoolData::Const(false) = sm.bits[i].data {
+                continue;
+            }
+
             let term = ValueWire::mul_bool(&sm.bits[i], &lg.shift_up_const(i));
             sum_terms.push(term);
         }

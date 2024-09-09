@@ -9,6 +9,7 @@ pub enum BoolData {
     Or(usize, Rc<BoolWire>, Rc<BoolWire>),
     Not(usize, Rc<BoolWire>),
     Xor(usize, Rc<BoolWire>, Rc<BoolWire>),
+    Copy(usize, Rc<BoolWire>),
 }
 
 pub struct BoolWire {
@@ -32,6 +33,7 @@ impl BoolWire {
             BoolData::Or(id, _, _) => Some(*id),
             BoolData::Not(id, _) => Some(*id),
             BoolData::Xor(id, _, _) => Some(*id),
+            BoolData::Copy(id, _) => Some(*id),
         }
     }
 
@@ -114,6 +116,15 @@ impl BoolWire {
         Rc::new(BoolWire {
             id_gen: a.id_gen.clone(),
             data: BoolData::Xor(id, a.clone(), b.clone()),
+        })
+    }
+
+    pub fn copy(a: &Rc<BoolWire>) -> Rc<BoolWire> {
+        let id = a.id_gen.borrow_mut().gen();
+
+        Rc::new(BoolWire {
+            id_gen: a.id_gen.clone(),
+            data: BoolData::Copy(id, a.clone()),
         })
     }
 }

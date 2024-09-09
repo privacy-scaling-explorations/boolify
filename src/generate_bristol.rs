@@ -29,17 +29,28 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         }
     }
 
-    for output in outputs {
-        for bit in output.value.bits.iter().rev() {
-            if let Some(id) = bit.id() {
-                wire_id_mapper.get_temp_output(id);
+    let mut outputs = outputs.clone();
+    for output in outputs.iter_mut() {
+        for bit in output.value.bits.iter_mut().rev() {
+            let mut id = bit
+                .id()
+                .expect("Output bits without ids (constants) are not supported");
+
+            if wire_id_mapper.map.contains_key(&id) {
+                // This output wire overlaps with input!
+                // That causes issues with putting output wires at the end of the circuit, so we
+                // create a copy instead
+                *bit = BoolWire::copy(&bit);
+                id = bit.id().expect("Expected copy to produce id");
             }
+
+            wire_id_mapper.get_temp_output(id);
         }
     }
 
     let mut gates = Vec::new();
 
-    for output in outputs {
+    for output in &outputs {
         for bit in &output.value.bits {
             generate_gates(&mut gates, &mut wire_id_mapper, bit);
         }
@@ -57,7 +68,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         info.input_name_to_wire_index.insert(input.name.clone(), id);
     }
 
-    for output in outputs {
+    for output in &outputs {
         let last = output.value.bits.last().expect("Output should have bits");
 
         let id = wire_id_mapper
@@ -101,6 +112,9 @@ fn collect_inputs(inputs: &mut BTreeMap<usize, Rc<CircuitInput>>, bool: &BoolWir
         }
         BoolData::Const(_) => (),
         BoolData::Not(_, a) => {
+            collect_inputs(inputs, &a);
+        }
+        BoolData::Copy(_, a) => {
             collect_inputs(inputs, &a);
         }
     }
@@ -216,7 +230,7 @@ fn generate_gates(gates: &mut Vec<Gate>, wire_id_mapper: &mut WireIdMapper, bit:
             });
         }
         BoolData::Const(_) => panic!("Const should not be in the middle of the circuit"),
-        BoolData::Not(_, a) => {
+        BoolData::Not(_, a) | BoolData::Copy(_, a) => {
             generate_gates(gates, wire_id_mapper, a);
 
             let a = wire_id_mapper.get(a.id().expect("Input should have an id"));
@@ -225,7 +239,11 @@ fn generate_gates(gates: &mut Vec<Gate>, wire_id_mapper: &mut WireIdMapper, bit:
             gates.push(Gate {
                 inputs: vec![a],
                 outputs: vec![out],
-                op: "NOT".to_string(),
+                op: match &bit.data {
+                    BoolData::Not(_, _) => "NOT".to_string(),
+                    BoolData::Copy(_, _) => "COPY".to_string(),
+                    _ => unreachable!(),
+                },
             });
         }
     }

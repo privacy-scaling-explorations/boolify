@@ -1,5 +1,6 @@
 use crate::value_wire::ValueWire;
 
+#[derive(Clone)]
 pub struct CircuitOutput {
     pub name: String,
     pub value: ValueWire,

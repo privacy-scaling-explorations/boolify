@@ -62,6 +62,12 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
                 wires[c] = !wires[a];
             }
+            "COPY" => {
+                let a = gate.inputs[0];
+                let c = gate.outputs[0];
+
+                wires[c] = wires[a];
+            }
             _ => {
                 panic!("unknown gate operation: {}", gate.op);
             }
