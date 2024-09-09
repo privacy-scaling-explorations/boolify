@@ -30,7 +30,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 
     for output in outputs {
-        for bit in &output.value.bits {
+        for bit in output.value.bits.iter().rev() {
             if let Some(id) = bit.id() {
                 wire_id_mapper.get_temp_output(id);
             }
@@ -58,10 +58,10 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 
     for output in outputs {
-        let first_bit = output.value.bits.first().expect("Output should have bits");
+        let last = output.value.bits.last().expect("Output should have bits");
 
         let id = wire_id_mapper
-            .get_existing(first_bit.id().expect("Output should have an id"))
+            .get_existing(last.id().expect("Output should have an id"))
             .expect("Output should have an id");
 
         info.output_name_to_wire_index
@@ -165,7 +165,7 @@ impl WireIdMapper {
             .map(|(a, b)| (*b, *a))
             .collect::<HashMap<usize, usize>>();
 
-        for i in (0..self.temp_output_map.len()).rev() {
+        for i in 0..self.temp_output_map.len() {
             let temp_id = usize::MAX - i;
             let old_id = temp_output_map_rev
                 .get(&temp_id)
