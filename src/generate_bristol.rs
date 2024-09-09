@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, HashSet},
     rc::Rc,
     usize,
 };
@@ -14,10 +14,11 @@ use crate::{
 
 pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
+    let mut visited = HashSet::<usize>::new();
 
     for output in outputs {
         for bit in &output.value.bits {
-            collect_inputs(&mut inputs, bit);
+            collect_inputs(&mut inputs, &mut visited, bit);
         }
     }
 
@@ -48,11 +49,12 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         }
     }
 
-    let mut gates = Vec::new();
+    let mut gates = Vec::<Gate>::new();
+    let mut generated_ids = HashSet::<usize>::new();
 
     for output in &outputs {
         for bit in &output.value.bits {
-            generate_gates(&mut gates, &mut wire_id_mapper, bit);
+            generate_gates(&mut gates, &mut wire_id_mapper, &mut generated_ids, bit);
         }
     }
 
@@ -97,7 +99,19 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 }
 
-fn collect_inputs(inputs: &mut BTreeMap<usize, Rc<CircuitInput>>, bool: &BoolWire) {
+fn collect_inputs(
+    inputs: &mut BTreeMap<usize, Rc<CircuitInput>>,
+    visited: &mut HashSet<usize>,
+    bool: &BoolWire,
+) {
+    if let Some(id) = bool.id() {
+        if !visited.insert(id) {
+            return;
+        }
+    } else {
+        return;
+    }
+
     match &bool.data {
         BoolData::Input(_, input) => {
             let prev = inputs.insert(input.id_start, input.clone());
@@ -107,15 +121,15 @@ fn collect_inputs(inputs: &mut BTreeMap<usize, Rc<CircuitInput>>, bool: &BoolWir
             }
         }
         BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
-            collect_inputs(inputs, &a);
-            collect_inputs(inputs, &b);
+            collect_inputs(inputs, visited, &a);
+            collect_inputs(inputs, visited, &b);
         }
         BoolData::Const(_) => (),
         BoolData::Not(_, a) => {
-            collect_inputs(inputs, &a);
+            collect_inputs(inputs, visited, &a);
         }
         BoolData::Copy(_, a) => {
-            collect_inputs(inputs, &a);
+            collect_inputs(inputs, visited, &a);
         }
     }
 }
@@ -207,12 +221,26 @@ impl WireIdMapper {
     }
 }
 
-fn generate_gates(gates: &mut Vec<Gate>, wire_id_mapper: &mut WireIdMapper, bit: &Rc<BoolWire>) {
+fn generate_gates(
+    gates: &mut Vec<Gate>,
+    wire_id_mapper: &mut WireIdMapper,
+    generated_ids: &mut HashSet<usize>,
+    bit: &Rc<BoolWire>,
+) {
+    match bit.id() {
+        Some(id) => {
+            if !generated_ids.insert(id) {
+                return;
+            }
+        }
+        None => return,
+    }
+
     match &bit.data {
         BoolData::Input(_, _) => (),
         BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
-            generate_gates(gates, wire_id_mapper, a);
-            generate_gates(gates, wire_id_mapper, b);
+            generate_gates(gates, wire_id_mapper, generated_ids, a);
+            generate_gates(gates, wire_id_mapper, generated_ids, b);
 
             let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
             let b_id = wire_id_mapper.get(b.id().expect("Input should have an id"));
@@ -231,7 +259,7 @@ fn generate_gates(gates: &mut Vec<Gate>, wire_id_mapper: &mut WireIdMapper, bit:
         }
         BoolData::Const(_) => panic!("Const should not be in the middle of the circuit"),
         BoolData::Not(_, a) | BoolData::Copy(_, a) => {
-            generate_gates(gates, wire_id_mapper, a);
+            generate_gates(gates, wire_id_mapper, generated_ids, a);
 
             let a = wire_id_mapper.get(a.id().expect("Input should have an id"));
             let out = wire_id_mapper.get(bit.id().expect("Input should have an id"));

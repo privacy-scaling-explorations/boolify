@@ -1,5 +1,5 @@
 pub struct IdGenerator {
-    next_id: usize,
+    pub next_id: usize,
 }
 
 impl IdGenerator {
