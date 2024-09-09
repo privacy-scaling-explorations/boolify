@@ -26,7 +26,9 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
         let value = inputs.get(name).expect("missing input value");
 
-        assert!(*value >> width == 0, "input value too large");
+        if width < (usize::BITS as usize) {
+            assert!(*value >> width == 0, "input value too large");
+        }
 
         for j in 0..width {
             wires[id_start + j] = (value >> (width - j - 1)) & 1 == 1;
