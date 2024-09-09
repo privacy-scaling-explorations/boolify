@@ -163,6 +163,7 @@ impl WireIdMapper {
                 .expect("Output should exist");
 
             assert!(self.map.get(old_id).is_none());
+            self.temp_output_map.remove(old_id);
             let proper_id = self.get(*old_id);
             update_map.insert(temp_id, proper_id);
         }

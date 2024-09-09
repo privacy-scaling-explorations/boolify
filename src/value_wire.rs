@@ -13,9 +13,9 @@ pub struct ValueWire {
 }
 
 impl ValueWire {
-    pub fn new_input(name: String, size: usize, id_gen: &Rc<RefCell<IdGenerator>>) -> Self {
+    pub fn new_input(name: &str, size: usize, id_gen: &Rc<RefCell<IdGenerator>>) -> Self {
         let circuit_input = Rc::new(CircuitInput {
-            name,
+            name: name.to_string(),
             id_start: id_gen.borrow_mut().peek(),
             size,
         });
