@@ -357,6 +357,54 @@ impl ValueWire {
                 .collect(),
         }
     }
+
+    pub fn quotient_remainder(a: &ValueWire, b: &ValueWire) -> (ValueWire, ValueWire) {
+        let size = std::cmp::max(a.bits.len(), b.bits.len());
+        let a = a.resize(size);
+        let b = b.resize(size);
+
+        let mut shifts_valid = Vec::<Rc<BoolWire>>::new();
+        shifts_valid.push(Rc::new(BoolWire {
+            id_gen: a.id_gen.clone(),
+            data: BoolData::Const(true),
+        }));
+
+        for i in 1..size {
+            shifts_valid.push(BoolWire::and(
+                &shifts_valid[i - 1],
+                &BoolWire::not(&b.at(size - i)),
+            ));
+        }
+
+        let mut quotient = ValueWire::new_const(0, &a.id_gen).resize(size);
+        let mut rem = a.clone();
+
+        for i in (0..size).rev() {
+            let valid = &shifts_valid[i];
+            let shift_b = b.shift_up_const(i);
+            let less_than = ValueWire::less_than_or_eq(&shift_b, &rem);
+
+            let apply = BoolWire::and(valid, &less_than);
+            let apply_rem = ValueWire::sub(&rem, &shift_b);
+
+            quotient.bits[i] = apply.clone();
+
+            rem = ValueWire::bit_xor(
+                &ValueWire::mul_bool(&apply, &apply_rem),
+                &ValueWire::mul_bool(&BoolWire::not(&apply), &rem),
+            );
+        }
+
+        (quotient, rem)
+    }
+
+    pub fn div(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        ValueWire::quotient_remainder(a, b).0
+    }
+
+    pub fn mod_(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        ValueWire::quotient_remainder(a, b).1
+    }
 }
 
 fn tree_sum(values: &[ValueWire]) -> ValueWire {

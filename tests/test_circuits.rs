@@ -72,6 +72,16 @@ fn test_4bit_mul() {
 }
 
 #[test]
+fn test_4bit_div() {
+    test_4bit_binary_op(ValueWire::div, |a, b| if b == 0 { 0xf } else { a / b });
+}
+
+#[test]
+fn test_4bit_mod() {
+    test_4bit_binary_op(ValueWire::mod_, |a, b| if b == 0 { a } else { a % b });
+}
+
+#[test]
 fn test_4bit_add() {
     test_4bit_binary_op(ValueWire::add, |a, b| (a + b) & 0xf);
 }

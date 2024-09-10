@@ -30,12 +30,37 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         }
     }
 
+    let first_input = inputs.first_key_value().expect("error: no inputs").1;
+    let id_gen = &outputs.first().expect("error: no outputs").value.id_gen;
+
+    let first_wire = Rc::new(BoolWire {
+        id_gen: id_gen.clone(),
+        data: BoolData::Input(first_input.id_start, first_input.clone()),
+    });
+
+    // These exist for the slightly unusual scenario where the outputs include constants -
+    // we replace with these to get the required values without having to deal with any explicit
+    // constants in boolean circuits, which don't usually require them
+    let special_false = BoolWire::xor(&first_wire, &first_wire);
+    let special_true = BoolWire::not(&special_false);
+
     let mut outputs = outputs.clone();
     for output in outputs.iter_mut() {
         for bit in output.value.bits.iter_mut().rev() {
-            let mut id = bit
-                .id()
-                .expect("Output bits without ids (constants) are not supported");
+            let const_value: Option<bool> = match &bit.data {
+                BoolData::Const(false) => Some(false),
+                BoolData::Const(true) => Some(true),
+                _ => None,
+            };
+
+            if let Some(const_value) = const_value {
+                *bit = match const_value {
+                    true => special_true.clone(),
+                    false => special_false.clone(),
+                };
+            }
+
+            let mut id = bit.id().unwrap();
 
             if wire_id_mapper.map.contains_key(&id) {
                 // This output wire overlaps with input!
