@@ -190,7 +190,7 @@ impl ValueWire {
             sum_terms.push(term);
         }
 
-        tree_sum(&sum_terms)
+        tree_sum(&sum_terms, &a.id_gen)
     }
 
     fn split_at(&self, split_point: usize) -> (ValueWire, ValueWire) {
@@ -407,15 +407,15 @@ impl ValueWire {
     }
 }
 
-fn tree_sum(values: &[ValueWire]) -> ValueWire {
+fn tree_sum(values: &[ValueWire], id_gen: &Rc<RefCell<IdGenerator>>) -> ValueWire {
     if values.len() == 0 {
-        ValueWire::new_const(0, &values[0].id_gen)
+        ValueWire::new_const(0, id_gen)
     } else if values.len() == 1 {
         values[0].clone()
     } else {
         let mid = values.len() / 2;
-        let left = tree_sum(&values[..mid]);
-        let right = tree_sum(&values[mid..]);
+        let left = tree_sum(&values[..mid], id_gen);
+        let right = tree_sum(&values[mid..], id_gen);
 
         ValueWire::add(&left, &right)
     }

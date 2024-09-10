@@ -39,8 +39,7 @@ into *boolean* [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) cir
 
 both circuits represent the addition of two numbers, but the arithmetic circuit simply uses one built-in addition gate, and the boolean circuit achieves (4-bit) addition using only boolean operations.
 
-Bristol circuits are useful for doing MPC. One major category of MPC is garbled circuits, and these
-require boolean circuits, hence this tool.
+Bristol circuits are useful for doing MPC. One major category of MPC is [garbled circuits](https://www.youtube.com/watch?v=FMZ-HARN0gI), and these require boolean circuits, hence this tool.
 
 The following projects are useful for generating arithmetic circuits:
 - [summon](https://github.com/voltrevo/summon) (write circuits in TypeScript)
