@@ -17,10 +17,9 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     }
 
     for (_, const_info) in &arith_circuit.info.constants {
-        wires[const_info.wire_index] = Some(ValueWire::new_const(
-            const_info.value.parse().unwrap(),
-            &id_gen,
-        ));
+        wires[const_info.wire_index] = Some(
+            ValueWire::new_const(const_info.value.parse().unwrap(), &id_gen).resize(bit_width),
+        );
     }
 
     let unary_ops = ["AUnaryAdd", "AUnarySub", "ANot", "ABitNot"]
