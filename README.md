@@ -74,3 +74,55 @@ pub fn main() {
     let bool_circuit = boolify(&arith_circuit, bits);
 }
 ```
+
+This strategy assumes a consistent bit width, which can be unnecessarily limiting.
+
+You can go lower level and use the internal circuit model to combine operations with different sizes
+like this:
+
+```rs
+use boolify::{generate_bristol, CircuitOutput, IdGenerator, ValueWire};
+
+pub fn readme_demo() {
+    let id_gen = IdGenerator::new_rc_refcell();
+
+    let a = ValueWire::new_input("a", 100, &id_gen);
+    let b = ValueWire::new_input("b", 80, &id_gen);
+
+    // c is 100 bits, but requires fewer gates than a full 100x100-bit multiplier
+    let c = ValueWire::mul(&a, &b);
+
+    // Note this is a BoolWire rather than ValueWire, since `less than` results in a single bit of
+    // information.
+    let d = ValueWire::less_than(&c, &ValueWire::new_const(123, &id_gen));
+
+    let outputs = vec![CircuitOutput::new("d", BoolWire::as_value(&d))];
+
+    let bristol_circuit = generate_bristol(&outputs);
+
+    println!("gates: {}", bristol_circuit.gates.len());
+    // 28285
+    // (multiplication of >64 bits is pretty heavy, modern ALUs require similar gate counts)
+    // (use small bits if you can - eg a full 16x16-bit multiplier is only 648 gates)
+}
+```
+
+Alternatively, you can get most of these benefits without using the internal circuit model by simply
+using bit masking in your higher level language. For example, using summon with 32-bit circuit
+generation, you can implement an 8-bit multiply-adder like this:
+
+```ts
+function mulAdd8Bit(a: number, b: number, c: number) {
+    let res = a;
+
+    res *= b;
+    res &= 0xff;
+
+    res += c;
+    res &= 0xff;
+
+    return res;
+}
+```
+
+The inclusion of the bitmasking operations might feel like extra work (and it kinda is at compile-time), but it actually results in a smaller circuit because most of the bits are thrown away and all the circuitry required to generate them is discarded.
