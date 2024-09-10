@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 pub struct IdGenerator {
     pub next_id: usize,
 }
@@ -5,6 +7,10 @@ pub struct IdGenerator {
 impl IdGenerator {
     pub fn new() -> Self {
         IdGenerator { next_id: 0 }
+    }
+
+    pub fn new_rc_refcell() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self::new()))
     }
 
     pub fn gen(&mut self) -> usize {

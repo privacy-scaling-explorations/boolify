@@ -7,6 +7,8 @@ name = "boolify"
 version = "0.1.0"
 dependencies = [
  "bristol-circuit",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,4 +1,5 @@
 mod bool_wire;
+mod boolify;
 mod circuit_input;
 mod circuit_output;
 mod eval;
@@ -12,5 +13,6 @@ pub use circuit_output::CircuitOutput;
 pub use id_generator::IdGenerator;
 pub use value_wire::ValueWire;
 
+pub use boolify::boolify;
 pub use eval::eval;
 pub use generate_bristol::generate_bristol;
