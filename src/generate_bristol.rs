@@ -62,7 +62,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
 
             let mut id = bit.id().unwrap();
 
-            if wire_id_mapper.map.contains_key(&id) {
+            if wire_id_mapper.get_existing(id).is_some() {
                 // This output wire overlaps with input!
                 // That causes issues with putting output wires at the end of the circuit, so we
                 // create a copy instead

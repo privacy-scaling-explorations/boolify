@@ -35,6 +35,43 @@ fn test_2bit_add() {
 }
 
 #[test]
+fn test_8bit_xor_and_1() {
+    let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
+
+    let a = ValueWire::new_input("a", 8, &id_gen);
+    let b = ValueWire::new_input("b", 8, &id_gen);
+
+    let c0 = ValueWire::add(&a, &b);
+    let c = ValueWire::bit_and(&c0, &ValueWire::new_const(1, &id_gen));
+
+    let outputs = vec![CircuitOutput::new("c", c)];
+
+    let circuit = generate_bristol(&outputs);
+
+    let bristol_string = circuit.get_bristol_string().unwrap();
+
+    assert_eq!(
+        bristol_string,
+        vec![
+            "8 24",
+            "2 8 8",
+            "1 8",
+            "",
+            "2 1 7 15 23 XOR",
+            "2 1 0 0 16 XOR",
+            "1 1 16 22 COPY",
+            "1 1 16 21 COPY",
+            "1 1 16 20 COPY",
+            "1 1 16 19 COPY",
+            "1 1 16 18 COPY",
+            "1 1 16 17 COPY",
+            "",
+        ]
+        .join("\n")
+    );
+}
+
+#[test]
 fn test_2bit_mul() {
     let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
 
