@@ -119,7 +119,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     BristolCircuit {
         wire_count: wire_id_mapper.map.len(),
         info,
-        io_widths: Some((input_widths, output_widths)),
+        io_widths: (input_widths, output_widths),
         gates,
     }
 }

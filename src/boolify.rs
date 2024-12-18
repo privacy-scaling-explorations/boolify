@@ -5,7 +5,7 @@ use bristol_circuit::BristolCircuit;
 use crate::{generate_bristol, BoolWire, CircuitOutput, IdGenerator, ValueWire};
 
 pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircuit {
-    if arith_circuit.io_widths.is_some() {
+    if !io_widths_all_1s(&arith_circuit.io_widths) {
         panic!("Arithmetic circuit should not have io widths");
     }
 
@@ -109,4 +109,8 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     let circuit = generate_bristol(&outputs);
 
     circuit
+}
+
+fn io_widths_all_1s(io_widths: &(Vec<usize>, Vec<usize>)) -> bool {
+    io_widths.0.iter().all(|&w| w == 1) && io_widths.1.iter().all(|&w| w == 1)
 }

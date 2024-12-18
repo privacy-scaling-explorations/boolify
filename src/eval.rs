@@ -13,10 +13,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
     sorted_inputs.sort_by(|a, b| a.1.cmp(b.1));
 
-    let (input_widths, output_widths) = circuit
-        .io_widths
-        .as_ref()
-        .expect("boolean circuit requires io widths");
+    let (input_widths, output_widths) = &circuit.io_widths;
 
     assert!(sorted_inputs.len() == input_widths.len());
 
