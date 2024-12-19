@@ -104,6 +104,27 @@ fn test_2bit_mul() {
 }
 
 #[test]
+fn test_2bit_shl() {
+    let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
+
+    let a = ValueWire::new_input("a", 2, &id_gen);
+    let b = ValueWire::new_const(1, &id_gen);
+
+    let c = ValueWire::bit_shl(&a, &b);
+
+    let outputs = vec![CircuitOutput::new("c", c)];
+
+    let circuit = generate_bristol(&outputs);
+
+    let bristol_string = circuit.get_bristol_string().unwrap();
+
+    assert_eq!(
+        bristol_string,
+        vec!["2 4", "1 2", "1 2", "", "2 1 0 0 3 XOR", "1 1 1 2 COPY", ""].join("\n")
+    );
+}
+
+#[test]
 fn test_4bit_mul() {
     test_4bit_binary_op(ValueWire::mul, |a, b| (a * b) & 0xf);
 }
