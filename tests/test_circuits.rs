@@ -153,6 +153,16 @@ fn test_4bit_mul() {
 }
 
 #[test]
+fn test_4bit_shl() {
+    test_4bit_binary_op_with_const(ValueWire::bit_shl, |a, b| (a << b) & 0xf);
+}
+
+#[test]
+fn test_4bit_shr() {
+    test_4bit_binary_op_with_const(ValueWire::bit_shr, |a, b| (a >> b) & 0xf);
+}
+
+#[test]
 fn test_4bit_div() {
     test_4bit_binary_op(ValueWire::div, |a, b| if b == 0 { 0xf } else { a / b });
 }
@@ -256,10 +266,41 @@ where
                 .collect::<HashMap<String, usize>>();
 
             let result = eval(&circuit, &inputs);
+
             let expected = op(a, b);
 
             assert_eq!(result.get("c").unwrap(), &expected);
         }
+    }
+}
+
+fn test_4bit_binary_op_with_const<F, G>(wire_op: F, op: G)
+where
+    F: Fn(&ValueWire, &ValueWire) -> ValueWire,
+    G: Fn(usize, usize) -> usize,
+{
+    let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
+
+    let a = ValueWire::new_input("a", 4, &id_gen);
+    let b = ValueWire::new_const(2, &id_gen);
+
+    let c = wire_op(&a, &b);
+
+    let outputs = vec![CircuitOutput::new("c", c)];
+
+    let circuit = generate_bristol(&outputs);
+
+    for a in 0..16 {
+        let inputs = vec![("a", a), ("b", 2)]
+            .into_iter()
+            .map(|(name, value)| (name.to_string(), value))
+            .collect::<HashMap<String, usize>>();
+
+        let result = eval(&circuit, &inputs);
+
+        let expected = op(a, b.as_usize().unwrap());
+
+        assert_eq!(result.get("c").unwrap(), &expected);
     }
 }
 

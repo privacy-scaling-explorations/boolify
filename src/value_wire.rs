@@ -177,6 +177,23 @@ impl ValueWire {
         }
     }
 
+    pub fn shift_down_const(&self, amount: usize) -> ValueWire {
+        if amount >= self.bits.len() {
+            return ValueWire::new_const(0, &self.id_gen);
+        }
+
+        let mut bits = Vec::with_capacity(self.bits.len() - amount);
+
+        for i in amount..self.bits.len() {
+            bits.push(self.bits[i].clone());
+        }
+
+        ValueWire {
+            id_gen: self.id_gen.clone(),
+            bits,
+        }
+    }
+
     pub fn mul_bool(a: &Rc<BoolWire>, b: &ValueWire) -> ValueWire {
         let mut bits = Vec::with_capacity(b.bits.len());
 
@@ -378,47 +395,14 @@ impl ValueWire {
 
     pub fn bit_shl(a: &ValueWire, b: &ValueWire) -> ValueWire {
         match b.as_usize() {
-            Some(n) => {
-                let mut bits = Vec::with_capacity(a.bits.len() + n);
-
-                for _ in 0..n {
-                    bits.push(Rc::new(BoolWire {
-                        id_gen: a.id_gen.clone(),
-                        data: BoolData::Const(false),
-                    }));
-                }
-
-                for i in 0..a.bits.len() - 1 {
-                    bits.push(a.bits[i].clone());
-                }
-
-                ValueWire {
-                    id_gen: a.id_gen.clone(),
-                    bits,
-                }
-            }
+            Some(n) => a.shift_up_const(n),
             None => panic!("Wire 'b' is not a constant"),
         }
     }
 
     pub fn bit_shr(a: &ValueWire, b: &ValueWire) -> ValueWire {
         match b.as_usize() {
-            Some(n) => {
-                if n >= a.bits.len() {
-                    return ValueWire::new_const(0, &a.id_gen);
-                }
-
-                let mut bits = Vec::with_capacity(a.bits.len() - n);
-
-                for i in n..a.bits.len() {
-                    bits.push(a.bits[i].clone());
-                }
-
-                ValueWire {
-                    id_gen: a.id_gen.clone(),
-                    bits,
-                }
-            }
+            Some(n) => a.shift_down_const(n),
             None => panic!("Wire 'b' is not a constant"),
         }
     }
