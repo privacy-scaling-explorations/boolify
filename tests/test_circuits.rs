@@ -120,7 +120,16 @@ fn test_2bit_shl() {
 
     assert_eq!(
         bristol_string,
-        vec!["2 4", "1 2", "1 2", "", "2 1 0 0 3 XOR", "1 1 1 2 COPY", ""].join("\n")
+        vec![
+            "2 4", //
+            "1 2",
+            "1 2",
+            "",
+            "2 1 0 0 3 XOR",
+            "1 1 1 2 COPY",
+            ""
+        ]
+        .join("\n")
     );
 }
 
@@ -141,7 +150,16 @@ fn test_2bit_shr() {
 
     assert_eq!(
         bristol_string,
-        vec!["2 4", "1 2", "1 2", "", "1 1 0 3 COPY", "2 1 0 0 2 XOR", ""].join("\n")
+        vec![
+            "2 4", //
+            "1 2",
+            "1 2",
+            "",
+            "1 1 0 3 COPY",
+            "2 1 0 0 2 XOR",
+            ""
+        ]
+        .join("\n")
     );
 }
 
