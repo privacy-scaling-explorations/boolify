@@ -58,6 +58,24 @@ impl ValueWire {
         }
     }
 
+    pub fn as_usize(&self) -> Option<usize> {
+        if self.bits.len() > (usize::BITS as usize) {
+            return None;
+        }
+
+        let mut value = 0;
+
+        for i in 0..self.bits.len() {
+            let BoolData::Const(bit) = self.bits[i].data else {
+                return None;
+            };
+
+            value |= (bit as usize) << i;
+        }
+
+        Some(value)
+    }
+
     pub fn at(&self, index: usize) -> Rc<BoolWire> {
         if index < self.bits.len() {
             self.bits[index].clone()
@@ -151,6 +169,30 @@ impl ValueWire {
 
         for i in 0..self.bits.len() - amount {
             bits.push(self.bits[i].clone());
+        }
+
+        ValueWire {
+            id_gen: self.id_gen.clone(),
+            bits,
+        }
+    }
+
+    pub fn shift_down_const(&self, amount: usize) -> ValueWire {
+        if amount >= self.bits.len() {
+            return ValueWire::new_const(0, &self.id_gen);
+        }
+
+        let mut bits = Vec::with_capacity(self.bits.len());
+
+        for i in amount..self.bits.len() {
+            bits.push(self.bits[i].clone());
+        }
+
+        for _ in 0..amount {
+            bits.push(Rc::new(BoolWire {
+                id_gen: self.id_gen.clone(),
+                data: BoolData::Const(false),
+            }));
         }
 
         ValueWire {
@@ -355,6 +397,20 @@ impl ValueWire {
             bits: (0..size)
                 .map(|i| BoolWire::xor(&a.at(i), &b.at(i)))
                 .collect(),
+        }
+    }
+
+    pub fn bit_shl(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        match b.as_usize() {
+            Some(n) => a.shift_up_const(n),
+            None => panic!("Wire 'b' is not a constant"),
+        }
+    }
+
+    pub fn bit_shr(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        match b.as_usize() {
+            Some(n) => a.shift_down_const(n),
+            None => panic!("Wire 'b' is not a constant"),
         }
     }
 

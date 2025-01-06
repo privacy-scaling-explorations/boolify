@@ -88,8 +88,8 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
                 "ABitAnd" => ValueWire::bit_and(a, b),
                 "ABitOr" => ValueWire::bit_or(a, b),
                 "AXor" => ValueWire::bit_xor(a, b),
-                "AShiftL" => panic!("Not implemented: shl"), // TODO
-                "AShiftR" => panic!("Not implemented: shr"), // TODO
+                "AShiftL" => ValueWire::bit_shl(a, b),
+                "AShiftR" => ValueWire::bit_shr(a, b),
                 _ => unreachable!(),
             });
         } else {
