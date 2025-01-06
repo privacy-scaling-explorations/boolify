@@ -182,10 +182,17 @@ impl ValueWire {
             return ValueWire::new_const(0, &self.id_gen);
         }
 
-        let mut bits = Vec::with_capacity(self.bits.len() - amount);
+        let mut bits = Vec::with_capacity(self.bits.len());
 
         for i in amount..self.bits.len() {
             bits.push(self.bits[i].clone());
+        }
+
+        for _ in 0..amount {
+            bits.push(Rc::new(BoolWire {
+                id_gen: self.id_gen.clone(),
+                data: BoolData::Const(false),
+            }));
         }
 
         ValueWire {

@@ -139,11 +139,9 @@ fn test_2bit_shr() {
 
     let bristol_string = circuit.get_bristol_string().unwrap();
 
-    dbg!(&bristol_string);
-
     assert_eq!(
         bristol_string,
-        vec!["1 3", "1 2", "1 1", "", "1 1 0 2 COPY", ""].join("\n")
+        vec!["2 4", "1 2", "1 2", "", "1 1 0 3 COPY", "2 1 0 0 2 XOR", ""].join("\n")
     );
 }
 
