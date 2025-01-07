@@ -129,11 +129,11 @@ fn collect_inputs(
     visited: &mut HashSet<usize>,
     bool: &BoolWire,
 ) {
-    if let Some(id) = bool.id() {
-        if !visited.insert(id) {
-            return;
-        }
-    } else {
+    let Some(id) = bool.id() else {
+        return;
+    };
+
+    if !visited.insert(id) {
         return;
     }
 
