@@ -12,7 +12,17 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     let id_gen = IdGenerator::new_rc_refcell();
     let mut wires: Vec<Option<ValueWire>> = vec![None; arith_circuit.wire_count];
 
-    for (name, i) in &arith_circuit.info.input_name_to_wire_index {
+    let mut ordered_inputs = arith_circuit
+        .info
+        .input_name_to_wire_index
+        .iter()
+        .collect::<Vec<_>>();
+
+    // It's important to create the ValueWires in this order so that the resulting boolean circuit
+    // preserves the order of the inputs.
+    ordered_inputs.sort_by_key(|(_, wire_index)| **wire_index);
+
+    for (name, i) in ordered_inputs {
         wires[*i] = Some(ValueWire::new_input(name, bit_width, &id_gen));
     }
 
