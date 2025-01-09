@@ -235,6 +235,21 @@ impl ValueWire {
         tree_sum(&sum_terms, &a.id_gen)
     }
 
+    pub fn exp(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        match b.as_usize() {
+            Some(n) => {
+                let mut e = a.clone();
+
+                for _i in 0..n - 1 {
+                    e = ValueWire::mul(&e, &e);
+                }
+
+                return e;
+            }
+            None => panic!("Wire 'b' is not a constant"),
+        }
+    }
+
     fn split_at(&self, split_point: usize) -> (ValueWire, ValueWire) {
         if self.bits.len() <= split_point {
             return (self.clone(), ValueWire::new_const(0, &self.id_gen));
