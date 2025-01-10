@@ -201,6 +201,11 @@ fn test_4bit_mul() {
 }
 
 #[test]
+fn test_4bit_exp() {
+    test_4bit_binary_op_with_const(ValueWire::exp, |a, b| a.pow(b.try_into().unwrap()) & 0xf);
+}
+
+#[test]
 fn test_4bit_shl() {
     test_4bit_binary_op_with_const(ValueWire::bit_shl, |a, b| (a << b) & 0xf);
 }
@@ -339,7 +344,7 @@ where
     let circuit = generate_bristol(&outputs);
 
     for a in 0..16 {
-        let inputs = vec![("a", a), ("b", 2)]
+        let inputs = vec![("a", a), ("b", b.as_usize().unwrap())]
             .into_iter()
             .map(|(name, value)| (name.to_string(), value))
             .collect::<HashMap<String, usize>>();
