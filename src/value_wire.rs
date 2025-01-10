@@ -235,6 +235,31 @@ impl ValueWire {
         tree_sum(&sum_terms, &a.id_gen)
     }
 
+    pub fn exp(a: &ValueWire, b: &ValueWire) -> ValueWire {
+        match b.as_usize() {
+            Some(n) => {
+                if n == 0 {
+                    // Base case: any number to the power of 0 is 1.
+                    return ValueWire::new_const(1, &a.id_gen);
+                } else if n == 1 {
+                    return a.clone();
+                } else if n % 2 == 0 {
+                    // If n is even, compute (a * a)^(n / 2).
+                    let half = ValueWire::mul(a, a);
+
+                    return ValueWire::exp(&half, &ValueWire::new_const(n / 2, &a.id_gen));
+                } else {
+                    // If n is odd: compute a * (a * a)^((n - 1) / 2).
+                    let half = ValueWire::mul(a, a);
+                    let reduced = ValueWire::exp(&half, &ValueWire::new_const((n - 1) / 2, &a.id_gen));
+
+                    return ValueWire::mul(a, &reduced);
+                }
+            }
+            None => panic!("Wire 'b' is not a constant"),
+        }
+    }
+
     fn split_at(&self, split_point: usize) -> (ValueWire, ValueWire) {
         if self.bits.len() <= split_point {
             return (self.clone(), ValueWire::new_const(0, &self.id_gen));

@@ -104,6 +104,38 @@ fn test_2bit_mul() {
 }
 
 #[test]
+fn test_2bit_exp() {
+    let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
+
+    let a = ValueWire::new_input("a", 2, &id_gen);
+    let b = ValueWire::new_const(2, &id_gen);
+
+    let c = ValueWire::exp(&a, &b);
+
+    let outputs = vec![CircuitOutput::new("c", c)];
+
+    let circuit = generate_bristol(&outputs);
+
+    let bristol_string = circuit.get_bristol_string().unwrap();
+
+    assert_eq!(
+        bristol_string,
+        vec![
+            "4 6",
+            "1 2",
+            "1 2",
+            "",
+            "2 1 1 1 5 AND",
+            "2 1 1 0 2 AND",
+            "2 1 0 1 3 AND",
+            "2 1 2 3 4 XOR",
+            ""
+        ]
+        .join("\n")
+    );
+}
+
+#[test]
 fn test_2bit_shl() {
     let id_gen = Rc::new(RefCell::new(IdGenerator::new()));
 
@@ -166,6 +198,11 @@ fn test_2bit_shr() {
 #[test]
 fn test_4bit_mul() {
     test_4bit_binary_op(ValueWire::mul, |a, b| (a * b) & 0xf);
+}
+
+#[test]
+fn test_4bit_exp() {
+    test_4bit_binary_op_with_const(ValueWire::exp, |a, b| a.pow(b.try_into().unwrap()) & 0xf);
 }
 
 #[test]
@@ -307,7 +344,7 @@ where
     let circuit = generate_bristol(&outputs);
 
     for a in 0..16 {
-        let inputs = vec![("a", a), ("b", 2)]
+        let inputs = vec![("a", a), ("b", b.as_usize().unwrap())]
             .into_iter()
             .map(|(name, value)| (name.to_string(), value))
             .collect::<HashMap<String, usize>>();

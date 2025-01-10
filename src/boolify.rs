@@ -86,7 +86,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
                 "AMul" => ValueWire::mul(a, b),
                 "ADiv" => ValueWire::div(a, b),
                 "AMod" => ValueWire::mod_(a, b),
-                "AExp" => panic!("Not implemented: exp"), // TODO
+                "AExp" => ValueWire::exp(a, b),
                 "AEq" => to_value(&ValueWire::equal(a, b)),
                 "ANeq" => to_value(&ValueWire::not_equal(a, b)),
                 "ABoolAnd" => to_value(&ValueWire::bool_and(a, b)),
