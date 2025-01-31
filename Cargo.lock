@@ -14,7 +14,7 @@ dependencies = [
 [[package]]
 name = "bristol-circuit"
 version = "0.1.0"
-source = "git+https://github.com/cedoor/bristol-circuit?rev=ff7587a#ff7587a4785baaa454498479839dd954424c13ea"
+source = "git+https://github.com/voltrevo/bristol-circuit?rev=288847c#288847cdf8391627eeaaf2adea8971f944ea055f"
 dependencies = [
  "serde",
  "serde_json",
