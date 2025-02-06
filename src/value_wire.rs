@@ -42,10 +42,13 @@ impl ValueWire {
         let mut bits = Vec::new();
 
         while value > 0 {
-            bits.push(Rc::new(BoolWire {
-                id_gen: id_gen.clone(),
-                data: BoolData::Const(value & 1 == 1),
-            }));
+            bits.insert(
+                0,
+                Rc::new(BoolWire {
+                    id_gen: id_gen.clone(),
+                    data: BoolData::Const(value & 1 == 1),
+                }),
+            );
 
             value >>= 1;
         }
@@ -57,21 +60,20 @@ impl ValueWire {
     }
 
     pub fn as_usize(&self) -> Option<usize> {
-        if self.bits.len() > (usize::BITS as usize) {
-            return None;
-        }
+        let mut result = 0;
+        let n = self.bits.len();
 
-        let mut value = 0;
-
-        for i in 0..self.bits.len() {
-            let BoolData::Const(bit) = self.bits[i].data else {
+        for (i, bit) in self.bits.iter().enumerate() {
+            if let BoolData::Const(value) = &bit.data {
+                let power = 1 << (n - i - 1);
+                if *value {
+                    result += power;
+                }
+            } else {
                 return None;
-            };
-
-            value |= (bit as usize) << i;
+            }
         }
-
-        Some(value)
+        Some(result)
     }
 
     pub fn at(&self, index: usize) -> Rc<BoolWire> {
