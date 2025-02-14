@@ -46,7 +46,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
 
     let mut outputs = outputs.clone();
     for output in outputs.iter_mut() {
-        for bit in output.value.bits.iter_mut().rev() {
+        for bit in output.value.bits.iter_mut() {
             let const_value: Option<bool> = match &bit.data {
                 BoolData::Const(false) => Some(false),
                 BoolData::Const(true) => Some(true),
@@ -96,10 +96,10 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 
     for output in &outputs {
-        let last = output.value.bits.last().expect("Output should have bits");
+        let first = output.value.bits.first().expect("Output should have bits");
 
         let id = wire_id_mapper
-            .get_existing(last.id().expect("Output should have an id"))
+            .get_existing(first.id().expect("Output should have an id"))
             .expect("Output should have an id");
 
         info.output_name_to_wire_index
