@@ -28,7 +28,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
         }
 
         for j in 0..width {
-            wires[id_start + j] = (value >> (width - j - 1)) & 1 == 1;
+            wires[id_start + j] = (value >> j) & 1 == 1;
         }
     }
 
@@ -92,7 +92,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
         let mut value = 0;
 
         for j in 0..width {
-            value |= (wires[id_start + j] as usize) << (width - j - 1);
+            value |= (wires[id_start + j] as usize) << j;
         }
 
         outputs.insert(name.clone(), value);

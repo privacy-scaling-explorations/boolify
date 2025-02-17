@@ -29,11 +29,6 @@ impl ValueWire {
             }));
         }
 
-        // Reverse so that we have the least significant bit first but the ids put the most
-        // significant bit first. This way we expose a big endian interface but can use little
-        // endian internally which simplifies the code.
-        bits.reverse();
-
         ValueWire {
             id_gen: id_gen.clone(),
             bits,
@@ -251,7 +246,8 @@ impl ValueWire {
                 } else {
                     // If n is odd: compute a * (a * a)^((n - 1) / 2).
                     let half = ValueWire::mul(a, a);
-                    let reduced = ValueWire::exp(&half, &ValueWire::new_const((n - 1) / 2, &a.id_gen));
+                    let reduced =
+                        ValueWire::exp(&half, &ValueWire::new_const((n - 1) / 2, &a.id_gen));
 
                     return ValueWire::mul(a, &reduced);
                 }
