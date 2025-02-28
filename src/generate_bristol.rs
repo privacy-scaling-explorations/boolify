@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet, VecDeque},
     rc::Rc,
     usize,
 };
@@ -14,14 +14,12 @@ use crate::{
 
 pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     println!("a0");
-    let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
-    let mut visited = HashSet::<usize>::new();
+    let output_bits = outputs
+        .iter()
+        .flat_map(|output| output.value.bits.iter().map(|bit| bit.as_ref()))
+        .collect::<VecDeque<_>>();
 
-    for output in outputs {
-        for bit in &output.value.bits {
-            collect_inputs(&mut inputs, &mut visited, bit);
-        }
-    }
+    let inputs = collect_inputs(output_bits);
 
     println!("a1");
 
@@ -139,39 +137,39 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 }
 
-fn collect_inputs(
-    inputs: &mut BTreeMap<usize, Rc<CircuitInput>>,
-    visited: &mut HashSet<usize>,
-    bool: &BoolWire,
-) {
-    let Some(id) = bool.id() else {
-        return;
-    };
+fn collect_inputs(mut bits: VecDeque<&BoolWire>) -> BTreeMap<usize, Rc<CircuitInput>> {
+    let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
+    let mut visited = HashSet::<usize>::new();
 
-    if !visited.insert(id) {
-        return;
-    }
+    while let Some(bool) = bits.pop_front() {
+        let Some(id) = bool.id() else {
+            continue;
+        };
 
-    match &bool.data {
-        BoolData::Input(_, input) => {
-            let prev = inputs.insert(input.id_start, input.clone());
+        if !visited.insert(id) {
+            continue;
+        }
 
-            if let Some(prev) = prev {
-                assert!(std::ptr::eq(&*prev, &**input));
+        match &bool.data {
+            BoolData::Input(_, input) => {
+                let prev = inputs.insert(input.id_start, input.clone());
+
+                if let Some(prev) = prev {
+                    assert!(std::ptr::eq(&*prev, &**input));
+                }
+            }
+            BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                bits.push_back(&a);
+                bits.push_back(&b);
+            }
+            BoolData::Const(_) => (),
+            BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                bits.push_back(&a);
             }
         }
-        BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
-            collect_inputs(inputs, visited, &a);
-            collect_inputs(inputs, visited, &b);
-        }
-        BoolData::Const(_) => (),
-        BoolData::Not(_, a) => {
-            collect_inputs(inputs, visited, &a);
-        }
-        BoolData::Copy(_, a) => {
-            collect_inputs(inputs, visited, &a);
-        }
     }
+
+    inputs
 }
 
 struct WireIdMapper {
