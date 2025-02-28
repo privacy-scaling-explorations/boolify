@@ -121,6 +121,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     println!("finished generating bristol");
     drop(outputs);
     println!("dropped outputs");
+    wires.reverse();
     drop(wires);
     println!("dropped wires");
 
