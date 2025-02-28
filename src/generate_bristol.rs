@@ -83,6 +83,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         }
     }
 
+    println!("0");
+
     wire_id_mapper.finalize_outputs(&mut gates);
 
     let mut info = CircuitInfo::default();
@@ -95,6 +97,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         info.input_name_to_wire_index.insert(input.name.clone(), id);
     }
 
+    println!("1");
+
     for output in &outputs {
         let first = output.value.bits.first().expect("Output should have bits");
 
@@ -106,6 +110,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             .insert(output.name.clone(), id);
     }
 
+    println!("2");
+
     let input_widths = inputs
         .values()
         .map(|input| input.size)
@@ -115,6 +121,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         .iter()
         .map(|output| output.value.bits.len())
         .collect::<Vec<usize>>();
+
+    println!("3");
 
     BristolCircuit {
         wire_count: wire_id_mapper.map.len(),
