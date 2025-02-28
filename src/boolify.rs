@@ -120,6 +120,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     let circuit = generate_bristol(&outputs);
     println!("finished generating bristol");
     drop(outputs);
+    println!("dropped outputs");
 
     circuit
 }
