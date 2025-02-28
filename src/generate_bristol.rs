@@ -13,6 +13,7 @@ use crate::{
 };
 
 pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
+    println!("a0");
     let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
     let mut visited = HashSet::<usize>::new();
 
@@ -21,6 +22,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             collect_inputs(&mut inputs, &mut visited, bit);
         }
     }
+
+    println!("a1");
 
     let mut wire_id_mapper = WireIdMapper::new();
 
@@ -37,6 +40,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
         id_gen: id_gen.clone(),
         data: BoolData::Input(first_input.id_start, first_input.clone()),
     });
+
+    println!("a2");
 
     // These exist for the slightly unusual scenario where the outputs include constants -
     // we replace with these to get the required values without having to deal with any explicit
@@ -73,6 +78,8 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             wire_id_mapper.get_temp_output(id);
         }
     }
+
+    println!("a3");
 
     let mut gates = Vec::<Gate>::new();
     let mut generated_ids = HashSet::<usize>::new();
