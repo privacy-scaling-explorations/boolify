@@ -118,6 +118,13 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
 
     let circuit = generate_bristol(&outputs);
 
+    drop(outputs);
+
+    // Reverse the wires so that the parents are dropped before children. This prevents recursive
+    // drop calls from overflowing the stack.
+    wires.reverse();
+    drop(wires);
+
     circuit
 }
 
