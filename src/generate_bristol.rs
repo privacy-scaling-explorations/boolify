@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet, VecDeque},
     rc::Rc,
     usize,
 };
@@ -13,14 +13,12 @@ use crate::{
 };
 
 pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
-    let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
-    let mut visited = HashSet::<usize>::new();
+    let output_bits = outputs
+        .iter()
+        .flat_map(|output| output.value.bits.iter().map(|bit| bit.as_ref()))
+        .collect::<VecDeque<_>>();
 
-    for output in outputs {
-        for bit in &output.value.bits {
-            collect_inputs(&mut inputs, &mut visited, bit);
-        }
-    }
+    let inputs = collect_inputs(output_bits);
 
     let mut wire_id_mapper = WireIdMapper::new();
 
@@ -124,39 +122,39 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     }
 }
 
-fn collect_inputs(
-    inputs: &mut BTreeMap<usize, Rc<CircuitInput>>,
-    visited: &mut HashSet<usize>,
-    bool: &BoolWire,
-) {
-    let Some(id) = bool.id() else {
-        return;
-    };
+fn collect_inputs(mut bits: VecDeque<&BoolWire>) -> BTreeMap<usize, Rc<CircuitInput>> {
+    let mut inputs = BTreeMap::<usize, Rc<CircuitInput>>::new();
+    let mut visited = HashSet::<usize>::new();
 
-    if !visited.insert(id) {
-        return;
-    }
+    while let Some(bool) = bits.pop_front() {
+        let Some(id) = bool.id() else {
+            continue;
+        };
 
-    match &bool.data {
-        BoolData::Input(_, input) => {
-            let prev = inputs.insert(input.id_start, input.clone());
+        if !visited.insert(id) {
+            continue;
+        }
 
-            if let Some(prev) = prev {
-                assert!(std::ptr::eq(&*prev, &**input));
+        match &bool.data {
+            BoolData::Input(_, input) => {
+                let prev = inputs.insert(input.id_start, input.clone());
+
+                if let Some(prev) = prev {
+                    assert!(std::ptr::eq(&*prev, &**input));
+                }
+            }
+            BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                bits.push_back(&a);
+                bits.push_back(&b);
+            }
+            BoolData::Const(_) => (),
+            BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                bits.push_back(&a);
             }
         }
-        BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
-            collect_inputs(inputs, visited, &a);
-            collect_inputs(inputs, visited, &b);
-        }
-        BoolData::Const(_) => (),
-        BoolData::Not(_, a) => {
-            collect_inputs(inputs, visited, &a);
-        }
-        BoolData::Copy(_, a) => {
-            collect_inputs(inputs, visited, &a);
-        }
     }
+
+    inputs
 }
 
 struct WireIdMapper {
@@ -250,54 +248,89 @@ fn generate_gates(
     gates: &mut Vec<Gate>,
     wire_id_mapper: &mut WireIdMapper,
     generated_ids: &mut HashSet<usize>,
-    bit: &Rc<BoolWire>,
+    start: &Rc<BoolWire>,
 ) {
-    match bit.id() {
-        Some(id) => {
-            if !generated_ids.insert(id) {
-                return;
-            }
+    // The stack holds tuples of (node, visited_flag).
+    // visited_flag == false: children not yet processed.
+    // visited_flag == true: ready to process the node.
+    let mut stack: Vec<(Rc<BoolWire>, bool)> = Vec::new();
+
+    // If the starting node has an id and hasn't been processed yet, push it.
+    if let Some(id) = start.id() {
+        if generated_ids.insert(id) {
+            stack.push((start.clone(), false));
         }
-        None => return,
     }
 
-    match &bit.data {
-        BoolData::Input(_, _) => (),
-        BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
-            generate_gates(gates, wire_id_mapper, generated_ids, a);
-            generate_gates(gates, wire_id_mapper, generated_ids, b);
-
-            let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
-            let b_id = wire_id_mapper.get(b.id().expect("Input should have an id"));
-            let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
-
-            gates.push(Gate {
-                inputs: vec![a_id, b_id],
-                outputs: vec![out_id],
-                op: match &bit.data {
-                    BoolData::And(_, _, _) => "AND".to_string(),
-                    BoolData::Or(_, _, _) => "OR".to_string(),
-                    BoolData::Xor(_, _, _) => "XOR".to_string(),
-                    _ => unreachable!(),
-                },
-            });
-        }
-        BoolData::Const(_) => panic!("Const should not be in the middle of the circuit"),
-        BoolData::Not(_, a) | BoolData::Copy(_, a) => {
-            generate_gates(gates, wire_id_mapper, generated_ids, a);
-
-            let a = wire_id_mapper.get(a.id().expect("Input should have an id"));
-            let out = wire_id_mapper.get(bit.id().expect("Input should have an id"));
-
-            gates.push(Gate {
-                inputs: vec![a],
-                outputs: vec![out],
-                op: match &bit.data {
-                    BoolData::Not(_, _) => "NOT".to_string(),
-                    BoolData::Copy(_, _) => "COPY".to_string(),
-                    _ => unreachable!(),
-                },
-            });
+    while let Some((bit, visited)) = stack.pop() {
+        if visited {
+            // Process the node after its children have been processed.
+            match &bit.data {
+                BoolData::Input(_, _) => { /* nothing to do for inputs */ }
+                BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                    let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
+                    let b_id = wire_id_mapper.get(b.id().expect("Input should have an id"));
+                    let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
+                    let op = match &bit.data {
+                        BoolData::And(_, _, _) => "AND".to_string(),
+                        BoolData::Or(_, _, _) => "OR".to_string(),
+                        BoolData::Xor(_, _, _) => "XOR".to_string(),
+                        _ => unreachable!(),
+                    };
+                    gates.push(Gate {
+                        inputs: vec![a_id, b_id],
+                        outputs: vec![out_id],
+                        op,
+                    });
+                }
+                BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                    let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
+                    let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
+                    let op = match &bit.data {
+                        BoolData::Not(_, _) => "NOT".to_string(),
+                        BoolData::Copy(_, _) => "COPY".to_string(),
+                        _ => unreachable!(),
+                    };
+                    gates.push(Gate {
+                        inputs: vec![a_id],
+                        outputs: vec![out_id],
+                        op,
+                    });
+                }
+                BoolData::Const(_) => {
+                    panic!("Const should not be in the middle of the circuit")
+                }
+            }
+        } else {
+            // First time seeing this node:
+            // Push the node back marked as visited, then push its children.
+            stack.push((bit.clone(), true));
+            match &bit.data {
+                BoolData::Input(_, _) => { /* no children */ }
+                BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                    // Push b then a (so that a is processed first).
+                    if let Some(b_id) = b.id() {
+                        if generated_ids.insert(b_id) {
+                            stack.push((b.clone(), false));
+                        }
+                    }
+                    if let Some(a_id) = a.id() {
+                        if generated_ids.insert(a_id) {
+                            stack.push((a.clone(), false));
+                        }
+                    }
+                }
+                BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                    if let Some(a_id) = a.id() {
+                        if generated_ids.insert(a_id) {
+                            stack.push((a.clone(), false));
+                        }
+                    }
+                }
+                BoolData::Const(_) => {
+                    panic!("Const should not be in the middle of the circuit")
+                }
+            }
         }
     }
 }
