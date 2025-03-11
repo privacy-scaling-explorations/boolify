@@ -6,7 +6,6 @@ pub enum BoolData {
     Const(bool),
     Input(usize, Rc<CircuitInput>),
     And(usize, Rc<BoolWire>, Rc<BoolWire>),
-    Or(usize, Rc<BoolWire>, Rc<BoolWire>),
     Not(usize, Rc<BoolWire>),
     Xor(usize, Rc<BoolWire>, Rc<BoolWire>),
     Copy(usize, Rc<BoolWire>),
@@ -30,7 +29,6 @@ impl BoolWire {
             BoolData::Const(_) => None,
             BoolData::Input(id, _) => Some(*id),
             BoolData::And(id, _, _) => Some(*id),
-            BoolData::Or(id, _, _) => Some(*id),
             BoolData::Not(id, _) => Some(*id),
             BoolData::Xor(id, _, _) => Some(*id),
             BoolData::Copy(id, _) => Some(*id),
@@ -75,7 +73,7 @@ impl BoolWire {
 
         Rc::new(BoolWire {
             id_gen: a.id_gen.clone(),
-            data: BoolData::Or(id, a.clone(), b.clone()),
+            data: BoolData::Not(id, BoolWire::and(&BoolWire::not(a), &BoolWire::not(b))),
         })
     }
 

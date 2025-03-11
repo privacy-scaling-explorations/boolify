@@ -143,7 +143,7 @@ fn collect_inputs(mut bits: VecDeque<&BoolWire>) -> BTreeMap<usize, Rc<CircuitIn
                     assert!(std::ptr::eq(&*prev, &**input));
                 }
             }
-            BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+            BoolData::And(_, a, b) | BoolData::Xor(_, a, b) => {
                 bits.push_back(&a);
                 bits.push_back(&b);
             }
@@ -267,13 +267,12 @@ fn generate_gates(
             // Process the node after its children have been processed.
             match &bit.data {
                 BoolData::Input(_, _) => { /* nothing to do for inputs */ }
-                BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                BoolData::And(_, a, b) | BoolData::Xor(_, a, b) => {
                     let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
                     let b_id = wire_id_mapper.get(b.id().expect("Input should have an id"));
                     let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
                     let op = match &bit.data {
                         BoolData::And(_, _, _) => "AND".to_string(),
-                        BoolData::Or(_, _, _) => "OR".to_string(),
                         BoolData::Xor(_, _, _) => "XOR".to_string(),
                         _ => unreachable!(),
                     };
@@ -307,7 +306,7 @@ fn generate_gates(
             stack.push((bit.clone(), true));
             match &bit.data {
                 BoolData::Input(_, _) => { /* no children */ }
-                BoolData::And(_, a, b) | BoolData::Or(_, a, b) | BoolData::Xor(_, a, b) => {
+                BoolData::And(_, a, b) | BoolData::Xor(_, a, b) => {
                     // Push b then a (so that a is processed first).
                     if let Some(b_id) = b.id() {
                         if generated_ids.insert(b_id) {
