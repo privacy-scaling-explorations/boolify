@@ -40,7 +40,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     // we replace with these to get the required values without having to deal with any explicit
     // constants in boolean circuits, which don't usually require them
     let special_false = BoolWire::xor(&first_wire, &first_wire);
-    let special_true = BoolWire::not(&special_false);
+    let special_true = BoolWire::inv(&special_false);
 
     let mut outputs = outputs.clone();
     for output in outputs.iter_mut() {
@@ -64,7 +64,7 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
                 // This output wire overlaps with input!
                 // That causes issues with putting output wires at the end of the circuit, so we
                 // create a copy instead
-                *bit = BoolWire::copy(&bit);
+                *bit = BoolWire::copy_with_new_id(&bit);
                 id = bit.id().expect("Expected copy to produce id");
             }
 
@@ -148,7 +148,7 @@ fn collect_inputs(mut bits: VecDeque<&BoolWire>) -> BTreeMap<usize, Rc<CircuitIn
                 bits.push_back(&b);
             }
             BoolData::Const(_) => (),
-            BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
+            BoolData::Inv(_, a) => {
                 bits.push_back(&a);
             }
         }
@@ -282,12 +282,11 @@ fn generate_gates(
                         op,
                     });
                 }
-                BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
+                BoolData::Inv(_, a) => {
                     let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
                     let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
                     let op = match &bit.data {
                         BoolData::Inv(_, _) => "INV".to_string(),
-                        BoolData::Copy(_, _) => "COPY".to_string(),
                         _ => unreachable!(),
                     };
                     gates.push(Gate {
@@ -319,7 +318,7 @@ fn generate_gates(
                         }
                     }
                 }
-                BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
+                BoolData::Inv(_, a) => {
                     if let Some(a_id) = a.id() {
                         if generated_ids.insert(a_id) {
                             stack.push((a.clone(), false));

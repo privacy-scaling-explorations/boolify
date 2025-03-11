@@ -62,7 +62,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
             wires[out_id] = Some(match gate.op.as_str() {
                 "AUnaryAdd" => in_.clone(),
                 "AUnarySub" => ValueWire::negate(in_),
-                "ANot" => to_value(&BoolWire::not(&in_.to_bool())),
+                "ANot" => to_value(&BoolWire::inv(&in_.to_bool())),
                 "ABitNot" => ValueWire::bit_not(in_),
                 _ => unreachable!(),
             });
