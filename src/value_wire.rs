@@ -99,7 +99,7 @@ impl ValueWire {
             let sum = BoolWire::xor(&a_bit, &b_bit);
 
             let new_carry =
-                BoolWire::or(&BoolWire::and(&a_bit, &b_bit), &BoolWire::and(&carry, &sum));
+                BoolWire::xor(&BoolWire::and(&a_bit, &b_bit), &BoolWire::and(&carry, &sum));
 
             bits.push(BoolWire::xor(&sum, &carry));
             carry = new_carry;
