@@ -42,6 +42,10 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
     let special_false = BoolWire::xor(&first_wire, &first_wire);
     let special_true = BoolWire::inv(&special_false);
 
+    // Special true/false often gets copied. By ensuring false is an inversion, we can produce each
+    // copy with a single inversion instead of two.
+    let special_false = BoolWire::inv_with_new_id(&special_true);
+
     let mut outputs = outputs.clone();
     for output in outputs.iter_mut() {
         for bit in output.value.bits.iter_mut() {
