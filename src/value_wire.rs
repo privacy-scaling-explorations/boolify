@@ -305,7 +305,7 @@ impl ValueWire {
         let (eq1, lt1) = ValueWire::cmp(&a1, &b1);
 
         let eq = BoolWire::and(&eq0, &eq1);
-        let lt = BoolWire::or(&lt1, &BoolWire::and(&eq1, &lt0));
+        let lt = BoolWire::xor(&lt1, &BoolWire::and(&eq1, &lt0));
 
         (eq, lt)
     }
