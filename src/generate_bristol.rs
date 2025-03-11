@@ -148,7 +148,7 @@ fn collect_inputs(mut bits: VecDeque<&BoolWire>) -> BTreeMap<usize, Rc<CircuitIn
                 bits.push_back(&b);
             }
             BoolData::Const(_) => (),
-            BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+            BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
                 bits.push_back(&a);
             }
         }
@@ -282,11 +282,11 @@ fn generate_gates(
                         op,
                     });
                 }
-                BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
                     let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
                     let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
                     let op = match &bit.data {
-                        BoolData::Not(_, _) => "NOT".to_string(),
+                        BoolData::Inv(_, _) => "INV".to_string(),
                         BoolData::Copy(_, _) => "COPY".to_string(),
                         _ => unreachable!(),
                     };
@@ -319,7 +319,7 @@ fn generate_gates(
                         }
                     }
                 }
-                BoolData::Not(_, a) | BoolData::Copy(_, a) => {
+                BoolData::Inv(_, a) | BoolData::Copy(_, a) => {
                     if let Some(a_id) = a.id() {
                         if generated_ids.insert(a_id) {
                             stack.push((a.clone(), false));

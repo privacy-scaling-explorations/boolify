@@ -6,7 +6,7 @@ pub enum BoolData {
     Const(bool),
     Input(usize, Rc<CircuitInput>),
     And(usize, Rc<BoolWire>, Rc<BoolWire>),
-    Not(usize, Rc<BoolWire>),
+    Inv(usize, Rc<BoolWire>), // Aka NOT
     Xor(usize, Rc<BoolWire>, Rc<BoolWire>),
     Copy(usize, Rc<BoolWire>),
 }
@@ -29,7 +29,7 @@ impl BoolWire {
             BoolData::Const(_) => None,
             BoolData::Input(id, _) => Some(*id),
             BoolData::And(id, _, _) => Some(*id),
-            BoolData::Not(id, _) => Some(*id),
+            BoolData::Inv(id, _) => Some(*id),
             BoolData::Xor(id, _, _) => Some(*id),
             BoolData::Copy(id, _) => Some(*id),
         }
@@ -73,7 +73,7 @@ impl BoolWire {
 
         Rc::new(BoolWire {
             id_gen: a.id_gen.clone(),
-            data: BoolData::Not(id, BoolWire::and(&BoolWire::not(a), &BoolWire::not(b))),
+            data: BoolData::Inv(id, BoolWire::and(&BoolWire::not(a), &BoolWire::not(b))),
         })
     }
 
@@ -85,7 +85,7 @@ impl BoolWire {
                     data: BoolData::Const(!b),
                 })
             }
-            BoolData::Not(_, a) => return a.clone(),
+            BoolData::Inv(_, a) => return a.clone(),
             _ => (),
         }
 
@@ -93,7 +93,7 @@ impl BoolWire {
 
         Rc::new(BoolWire {
             id_gen: a.id_gen.clone(),
-            data: BoolData::Not(id, a.clone()),
+            data: BoolData::Inv(id, a.clone()),
         })
     }
 
