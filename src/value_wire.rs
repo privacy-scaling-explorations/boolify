@@ -99,7 +99,7 @@ impl ValueWire {
             let sum = BoolWire::xor(&a_bit, &b_bit);
 
             let new_carry =
-                BoolWire::or(&BoolWire::and(&a_bit, &b_bit), &BoolWire::and(&carry, &sum));
+                BoolWire::xor(&BoolWire::and(&a_bit, &b_bit), &BoolWire::and(&carry, &sum));
 
             bits.push(BoolWire::xor(&sum, &carry));
             carry = new_carry;
@@ -112,7 +112,7 @@ impl ValueWire {
     }
 
     pub fn bit_not(a: &ValueWire) -> ValueWire {
-        let bits = a.bits.iter().map(|bit| BoolWire::not(bit)).collect();
+        let bits = a.bits.iter().map(|bit| BoolWire::inv(bit)).collect();
 
         ValueWire {
             id_gen: a.id_gen.clone(),
@@ -293,8 +293,8 @@ impl ValueWire {
 
         if size == 1 {
             return (
-                BoolWire::not(&BoolWire::xor(&a.at(0), &b.at(0))),
-                BoolWire::and(&BoolWire::not(&a.at(0)), &b.at(0)),
+                BoolWire::inv(&BoolWire::xor(&a.at(0), &b.at(0))),
+                BoolWire::and(&BoolWire::inv(&a.at(0)), &b.at(0)),
             );
         }
 
@@ -305,7 +305,7 @@ impl ValueWire {
         let (eq1, lt1) = ValueWire::cmp(&a1, &b1);
 
         let eq = BoolWire::and(&eq0, &eq1);
-        let lt = BoolWire::or(&lt1, &BoolWire::and(&eq1, &lt0));
+        let lt = BoolWire::xor(&lt1, &BoolWire::and(&eq1, &lt0));
 
         (eq, lt)
     }
@@ -321,11 +321,11 @@ impl ValueWire {
     }
 
     pub fn less_than_or_eq(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
-        BoolWire::not(&ValueWire::greater_than(a, b))
+        BoolWire::inv(&ValueWire::greater_than(a, b))
     }
 
     pub fn greater_than_or_eq(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
-        BoolWire::not(&ValueWire::less_than(a, b))
+        BoolWire::inv(&ValueWire::less_than(a, b))
     }
 
     pub fn equal(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
@@ -339,7 +339,7 @@ impl ValueWire {
         }
 
         if size == 1 {
-            return BoolWire::not(&BoolWire::xor(&a.at(0), &b.at(0)));
+            return BoolWire::inv(&BoolWire::xor(&a.at(0), &b.at(0)));
         }
 
         let (a0, a1) = a.split_at(size / 2);
@@ -352,7 +352,7 @@ impl ValueWire {
     }
 
     pub fn not_equal(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
-        BoolWire::not(&ValueWire::equal(a, b))
+        BoolWire::inv(&ValueWire::equal(a, b))
     }
 
     pub fn to_bool(&self) -> Rc<BoolWire> {
@@ -381,7 +381,7 @@ impl ValueWire {
     }
 
     pub fn bool_not(a: &ValueWire) -> Rc<BoolWire> {
-        BoolWire::not(&a.to_bool())
+        BoolWire::inv(&a.to_bool())
     }
 
     pub fn bool_xor(a: &ValueWire, b: &ValueWire) -> Rc<BoolWire> {
@@ -449,7 +449,7 @@ impl ValueWire {
         for i in 1..size {
             shifts_valid.push(BoolWire::and(
                 &shifts_valid[i - 1],
-                &BoolWire::not(&b.at(size - i)),
+                &BoolWire::inv(&b.at(size - i)),
             ));
         }
 
@@ -468,7 +468,7 @@ impl ValueWire {
 
             rem = ValueWire::bit_xor(
                 &ValueWire::mul_bool(&apply, &apply_rem),
-                &ValueWire::mul_bool(&BoolWire::not(&apply), &rem),
+                &ValueWire::mul_bool(&BoolWire::inv(&apply), &rem),
             );
         }
 

@@ -41,13 +41,6 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
                 wires[c] = wires[a] && wires[b];
             }
-            "OR" => {
-                let a = gate.inputs[0];
-                let b = gate.inputs[1];
-                let c = gate.outputs[0];
-
-                wires[c] = wires[a] || wires[b];
-            }
             "XOR" => {
                 let a = gate.inputs[0];
                 let b = gate.inputs[1];
@@ -55,7 +48,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
                 wires[c] = wires[a] ^ wires[b];
             }
-            "NOT" => {
+            "INV" => {
                 let a = gate.inputs[0];
                 let c = gate.outputs[0];
 

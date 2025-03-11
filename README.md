@@ -21,20 +21,20 @@ into *boolean* [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) cir
 2 4 4
 1 4
 
-2 1 3 7 21 XOR
-2 1 2 6 8 XOR
-2 1 3 7 9 AND
-2 1 8 9 20 XOR
-2 1 1 5 10 XOR
-2 1 2 6 11 AND
+2 1 0 4 18 XOR
+2 1 1 5 8 XOR
+2 1 0 4 9 AND
+2 1 8 9 19 XOR
+2 1 2 6 10 XOR
+2 1 1 5 11 AND
 2 1 9 8 12 AND
-2 1 11 12 13 OR
-2 1 10 13 19 XOR
-2 1 0 4 14 XOR
-2 1 1 5 15 AND
+2 1 11 12 13 XOR
+2 1 10 13 20 XOR
+2 1 3 7 14 XOR
+2 1 2 6 15 AND
 2 1 13 10 16 AND
-2 1 15 16 17 OR
-2 1 14 17 18 XOR
+2 1 15 16 17 XOR
+2 1 14 17 21 XOR
 ```
 
 both circuits represent the addition of two numbers, but the arithmetic circuit simply uses one built-in addition gate, and the boolean circuit achieves (4-bit) addition using only boolean operations.
