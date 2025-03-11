@@ -85,6 +85,7 @@ impl BoolWire {
                     data: BoolData::Const(!b),
                 })
             }
+            BoolData::Not(_, a) => return a.clone(),
             _ => (),
         }
 
