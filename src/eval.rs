@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bristol_circuit::BristolCircuit;
 
 pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMap<String, usize> {
-    let mut wires = vec![false; circuit.wire_count];
+    let mut wires: Vec<Option<bool>> = vec![None; circuit.wire_count];
 
     let mut sorted_inputs = circuit
         .info
@@ -28,7 +28,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
         }
 
         for j in 0..width {
-            wires[id_start + j] = (value >> j) & 1 == 1;
+            wires[id_start + j] = Some((value >> j) & 1 == 1);
         }
     }
 
@@ -39,26 +39,26 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
                 let b = gate.inputs[1];
                 let c = gate.outputs[0];
 
-                wires[c] = wires[a] && wires[b];
+                wires[c] = Some(wires[a].unwrap() && wires[b].unwrap());
             }
             "XOR" => {
                 let a = gate.inputs[0];
                 let b = gate.inputs[1];
                 let c = gate.outputs[0];
 
-                wires[c] = wires[a] ^ wires[b];
+                wires[c] = Some(wires[a].unwrap() ^ wires[b].unwrap());
             }
             "INV" => {
                 let a = gate.inputs[0];
                 let c = gate.outputs[0];
 
-                wires[c] = !wires[a];
+                wires[c] = Some(!wires[a].unwrap());
             }
             "COPY" => {
                 let a = gate.inputs[0];
                 let c = gate.outputs[0];
 
-                wires[c] = wires[a];
+                wires[c] = Some(wires[a].unwrap());
             }
             _ => {
                 panic!("unknown gate operation: {}", gate.op);
@@ -85,7 +85,7 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
         let mut value = 0;
 
         for j in 0..width {
-            value |= (wires[id_start + j] as usize) << j;
+            value |= (wires[id_start + j].unwrap() as usize) << j;
         }
 
         outputs.insert(name.clone(), value);

@@ -303,6 +303,67 @@ fn test_4bit_negate() {
     test_4bit_unary_op(ValueWire::negate, |a| (16 - a) & 0xf);
 }
 
+#[test]
+fn test_4bit_which_is_larger() {
+    test_4bit_binary_op(
+        |a, b| {
+            // Based on summon generation for:
+            // export default (a, b) => a === b ? 0 : a > b ? 1 : 2;
+            // (equivalent to mpc-hello circuit)
+
+            // 2 1 0 1 2 AEq
+            let w2 = ValueWire::equal(a, b);
+
+            // 2 1 0 1 3 AGt
+            let w3 = ValueWire::greater_than(a, b);
+
+            // 1 1 2 4 ANot
+            let w4 = BoolWire::inv(&w2);
+
+            // 1 1 3 5 ANot
+            let w5 = BoolWire::inv(&w3);
+
+            // 2 1 4 5 6 ABoolAnd
+            let w6 = BoolWire::and(&w4, &w5);
+
+            // 2 1 6 7 8 AMul
+            let w8 = ValueWire::mul(
+                &BoolWire::as_value(&w6).resize(4),
+                &ValueWire::new_const(2, &a.id_gen), // w7 is 2
+            );
+
+            // 2 1 2 6 9 ABoolOr
+            let w9 = BoolWire::or(&w2, &w6);
+
+            // 2 1 9 8 10 AMul
+            let w10 = ValueWire::mul(
+                &BoolWire::as_value(&w9).resize(4), //
+                &w8,
+            );
+
+            // 2 1 4 3 11 ABoolAnd
+            let w11 = BoolWire::and(&w4, &w3);
+
+            // 2 1 10 11 12 AAdd
+            let w12 = ValueWire::add(
+                &w10,
+                &BoolWire::as_value(&w11).resize(4), //
+            );
+
+            w12
+        },
+        |a, b| {
+            if a == b {
+                0 // neither is larger
+            } else if a > b {
+                1 // input 1 is larger
+            } else {
+                2 // input 2 is larger
+            }
+        },
+    );
+}
+
 fn test_4bit_binary_op<F, G>(wire_op: F, op: G)
 where
     F: Fn(&ValueWire, &ValueWire) -> ValueWire,

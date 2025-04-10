@@ -257,16 +257,17 @@ fn generate_gates(
     // The stack holds tuples of (node, visited_flag).
     // visited_flag == false: children not yet processed.
     // visited_flag == true: ready to process the node.
-    let mut stack: Vec<(Rc<BoolWire>, bool)> = Vec::new();
-
-    // If the starting node has an id and hasn't been processed yet, push it.
-    if let Some(id) = start.id() {
-        if generated_ids.insert(id) {
-            stack.push((start.clone(), false));
-        }
-    }
+    let mut stack: Vec<(Rc<BoolWire>, bool)> = vec![(start.clone(), false)];
 
     while let Some((bit, visited)) = stack.pop() {
+        let Some(bit_id) = bit.id() else {
+            continue;
+        };
+
+        if generated_ids.contains(&bit_id) {
+            continue;
+        }
+
         if visited {
             // Process the node after its children have been processed.
             match &bit.data {
@@ -274,7 +275,7 @@ fn generate_gates(
                 BoolData::And(_, a, b) | BoolData::Xor(_, a, b) => {
                     let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
                     let b_id = wire_id_mapper.get(b.id().expect("Input should have an id"));
-                    let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
+                    let out_id = wire_id_mapper.get(bit_id);
                     let op = match &bit.data {
                         BoolData::And(_, _, _) => "AND".to_string(),
                         BoolData::Xor(_, _, _) => "XOR".to_string(),
@@ -288,7 +289,7 @@ fn generate_gates(
                 }
                 BoolData::Inv(_, a) => {
                     let a_id = wire_id_mapper.get(a.id().expect("Input should have an id"));
-                    let out_id = wire_id_mapper.get(bit.id().expect("Input should have an id"));
+                    let out_id = wire_id_mapper.get(bit_id);
                     let op = match &bit.data {
                         BoolData::Inv(_, _) => "INV".to_string(),
                         _ => unreachable!(),
@@ -303,6 +304,8 @@ fn generate_gates(
                     panic!("Const should not be in the middle of the circuit")
                 }
             }
+
+            generated_ids.insert(bit_id);
         } else {
             // First time seeing this node:
             // Push the node back marked as visited, then push its children.
@@ -311,22 +314,16 @@ fn generate_gates(
                 BoolData::Input(_, _) => { /* no children */ }
                 BoolData::And(_, a, b) | BoolData::Xor(_, a, b) => {
                     // Push b then a (so that a is processed first).
-                    if let Some(b_id) = b.id() {
-                        if generated_ids.insert(b_id) {
-                            stack.push((b.clone(), false));
-                        }
+                    if b.id().is_some() {
+                        stack.push((b.clone(), false));
                     }
-                    if let Some(a_id) = a.id() {
-                        if generated_ids.insert(a_id) {
-                            stack.push((a.clone(), false));
-                        }
+                    if a.id().is_some() {
+                        stack.push((a.clone(), false));
                     }
                 }
                 BoolData::Inv(_, a) => {
-                    if let Some(a_id) = a.id() {
-                        if generated_ids.insert(a_id) {
-                            stack.push((a.clone(), false));
-                        }
+                    if a.id().is_some() {
+                        stack.push((a.clone(), false));
                     }
                 }
                 BoolData::Const(_) => {
