@@ -309,6 +309,7 @@ fn test_4bit_which_is_larger() {
         |a, b| {
             // Based on summon generation for:
             // export default (a, b) => a === b ? 0 : a > b ? 1 : 2;
+            // (equivalent to mpc-hello circuit)
 
             // 2 1 0 1 2 AEq
             let w2 = ValueWire::equal(a, b);
@@ -378,7 +379,6 @@ where
     let outputs = vec![CircuitOutput::new("c", c)];
 
     let circuit = generate_bristol(&outputs);
-    println!("{}", circuit.get_bristol_string().unwrap());
 
     for a in 0..16 {
         for b in 0..16 {
