@@ -1,10 +1,12 @@
 # boolify
 
-*Convert arithmetic circuits into boolean circuits*
+_Convert arithmetic circuits into boolean circuits_
 
 ## About
 
-This library converts arithmetic [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) circuits like this:
+This library converts arithmetic
+[bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) circuits like
+this:
 
 ```
 1 3
@@ -14,7 +16,8 @@ This library converts arithmetic [bristol fashion](https://nigelsmart.github.io/
 2 1 0 1 2 AAdd
 ```
 
-into *boolean* [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) circuits like this:
+into _boolean_ [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/)
+circuits like this:
 
 ```
 14 22
@@ -37,18 +40,27 @@ into *boolean* [bristol fashion](https://nigelsmart.github.io/MPC-Circuits/) cir
 2 1 14 17 21 XOR
 ```
 
-both circuits represent the addition of two numbers, but the arithmetic circuit simply uses one built-in addition gate, and the boolean circuit achieves (4-bit) addition using only boolean operations.
+both circuits represent the addition of two numbers, but the arithmetic circuit
+simply uses one built-in addition gate, and the boolean circuit achieves (4-bit)
+addition using only boolean operations.
 
-Bristol circuits are useful for doing MPC. One major category of MPC is [garbled circuits](https://www.youtube.com/watch?v=FMZ-HARN0gI), and these require boolean circuits, hence this tool.
+Bristol circuits are useful for doing MPC. One major category of MPC is
+[garbled circuits](https://www.youtube.com/watch?v=FMZ-HARN0gI), and these
+require boolean circuits, hence this tool.
 
 The following projects are useful for generating arithmetic circuits:
-- [summon](https://github.com/voltrevo/summon) (write circuits in TypeScript)
-- [circom-2-arithc](https://github.com/namnc/circom-2-arithc) (write circuits in circom)
+
+- [summon](https://github.com/privacy-scaling-explorations/summon) (write
+  circuits in TypeScript)
+- [circom-2-arithc](https://github.com/namnc/circom-2-arithc) (write circuits in
+  circom)
 
 The resulting boolean circuits can be useful in combination with:
+
+- [MPC Framework](https://github.com/privacy-scaling-explorations/mpc-framework)
 - [MP-SPDZ](https://github.com/data61/MP-SPDZ)
 - [mpz](https://github.com/privacy-scaling-explorations/mpz)
-- [mpz-ts](https://github.com/voltrevo/mpz-ts)
+- [mpz-ts](https://github.com/privacy-scaling-explorations/mpz-ts)
 
 ## Quick Start / CLI
 
@@ -58,7 +70,8 @@ Create `input/circuit.txt` and `input/circuit_info.txt`.
 
 This will create `output/circuit.txt` and `output/circuit_info.txt`.
 
-The CLI is currently hard-coded to use 16-bit arithmetic. You can change this in `src/cli.rs`.
+The CLI is currently hard-coded to use 16-bit arithmetic. You can change this in
+`src/cli.rs`.
 
 ## API
 
@@ -74,10 +87,11 @@ pub fn main() {
 }
 ```
 
-This strategy assumes a consistent bit width, which can be unnecessarily limiting.
+This strategy assumes a consistent bit width, which can be unnecessarily
+limiting.
 
-You can go lower level and use the internal circuit model to combine operations with different sizes
-like this:
+You can go lower level and use the internal circuit model to combine operations
+with different sizes like this:
 
 ```rs
 use boolify::{generate_bristol, CircuitOutput, IdGenerator, ValueWire};
@@ -106,9 +120,10 @@ pub fn readme_demo() {
 }
 ```
 
-Alternatively, you can get most of these benefits without using the internal circuit model by simply
-using bit masking in your higher level language. For example, using summon with 32-bit circuit
-generation, you can implement an 8-bit multiply-adder like this:
+Alternatively, you can get most of these benefits without using the internal
+circuit model by simply using bit masking in your higher level language. For
+example, using summon with 32-bit circuit generation, you can implement an 8-bit
+multiply-adder like this:
 
 ```ts
 function mulAdd8Bit(a: number, b: number, c: number) {
@@ -124,4 +139,7 @@ function mulAdd8Bit(a: number, b: number, c: number) {
 }
 ```
 
-The inclusion of the bitmasking operations might feel like extra work (and it kinda is at compile-time), but it actually results in a smaller circuit because most of the bits are thrown away and all the circuitry required to generate them is discarded.
+The inclusion of the bitmasking operations might feel like extra work (and it
+kinda is at compile-time), but it actually results in a smaller circuit because
+most of the bits are thrown away and all the circuitry required to generate them
+is discarded.
