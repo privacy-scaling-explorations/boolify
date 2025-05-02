@@ -1,35 +1,51 @@
+use core::panic;
 use std::{collections::HashSet, rc::Rc};
 
-use bristol_circuit::BristolCircuit;
+use bristol_circuit::{BristolCircuit, CircuitInfo};
 
 use crate::{generate_bristol, BoolWire, CircuitOutput, IdGenerator, ValueWire};
 
 pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircuit {
-    if !io_widths_all_1s(&arith_circuit.io_widths) {
-        panic!("Arithmetic circuit should not have io widths");
+    if !io_widths_all_1s(&arith_circuit.info) {
+        panic!("Arithmetic circuit widths should all be 1s");
     }
 
     let id_gen = IdGenerator::new_rc_refcell();
     let mut wires: Vec<Option<ValueWire>> = vec![None; arith_circuit.wire_count];
 
-    let mut ordered_inputs = arith_circuit
-        .info
-        .input_name_to_wire_index
-        .iter()
-        .collect::<Vec<_>>();
+    let mut ordered_inputs = arith_circuit.info.inputs.clone();
 
     // It's important to create the ValueWires in this order so that the resulting boolean circuit
     // preserves the order of the inputs.
-    ordered_inputs.sort_by_key(|(_, wire_index)| **wire_index);
+    // (Inputs are generally already ordered this way, but we sort them just in case.)
+    ordered_inputs.sort_by_key(|input| input.address);
 
-    for (name, i) in ordered_inputs {
-        wires[*i] = Some(ValueWire::new_input(name, bit_width, &id_gen));
+    for input in ordered_inputs {
+        wires[input.address] = Some(ValueWire::new_input(
+            input.name.as_str(),
+            if input.type_ == "number" {
+                bit_width
+            } else if input.type_ == "bool" {
+                1
+            } else {
+                panic!("Unsupported input type: {}", input.type_)
+            },
+            &id_gen,
+        ));
     }
 
-    for (_, const_info) in &arith_circuit.info.constants {
-        wires[const_info.wire_index] = Some(
-            ValueWire::new_const(const_info.value.parse().unwrap(), &id_gen).resize(bit_width),
-        );
+    for const_info in &arith_circuit.info.constants {
+        if let Some(v) = const_info.value.as_u64() {
+            wires[const_info.address] =
+                Some(ValueWire::new_const(v as usize, &id_gen).resize(bit_width));
+        }
+
+        if let Some(v) = const_info.value.as_bool() {
+            wires[const_info.address] =
+                Some(ValueWire::new_const(if v { 1 } else { 0 }, &id_gen).resize(1));
+        }
+
+        panic!("Unsupported type: {}", const_info.value);
     }
 
     let unary_ops = ["AUnaryAdd", "AUnarySub", "ANot", "ABitNot"]
@@ -46,7 +62,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     .map(|s| s.to_string())
     .collect::<HashSet<_>>();
 
-    let to_value = |b: &Rc<BoolWire>| BoolWire::as_value(b).resize(bit_width);
+    let bool_to_value = |b: &Rc<BoolWire>| BoolWire::as_value(b).resize(1);
 
     for gate in &arith_circuit.gates {
         if unary_ops.contains(&gate.op) {
@@ -62,7 +78,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
             wires[out_id] = Some(match gate.op.as_str() {
                 "AUnaryAdd" => in_.clone(),
                 "AUnarySub" => ValueWire::negate(in_),
-                "ANot" => to_value(&BoolWire::inv(&in_.to_bool())),
+                "ANot" => bool_to_value(&BoolWire::inv(&in_.to_bool())),
                 "ABitNot" => ValueWire::bit_not(in_),
                 _ => unreachable!(),
             });
@@ -87,14 +103,14 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
                 "ADiv" => ValueWire::div(a, b),
                 "AMod" => ValueWire::mod_(a, b),
                 "AExp" => ValueWire::exp(a, b),
-                "AEq" => to_value(&ValueWire::equal(a, b)),
-                "ANeq" => to_value(&ValueWire::not_equal(a, b)),
-                "ABoolAnd" => to_value(&ValueWire::bool_and(a, b)),
-                "ABoolOr" => to_value(&ValueWire::bool_or(a, b)),
-                "ALt" => to_value(&ValueWire::less_than(a, b)),
-                "ALEq" => to_value(&ValueWire::less_than_or_eq(a, b)),
-                "AGt" => to_value(&ValueWire::greater_than(a, b)),
-                "AGEq" => to_value(&ValueWire::greater_than_or_eq(a, b)),
+                "AEq" => bool_to_value(&ValueWire::equal(a, b)),
+                "ANeq" => bool_to_value(&ValueWire::not_equal(a, b)),
+                "ABoolAnd" => bool_to_value(&ValueWire::bool_and(a, b)),
+                "ABoolOr" => bool_to_value(&ValueWire::bool_or(a, b)),
+                "ALt" => bool_to_value(&ValueWire::less_than(a, b)),
+                "ALEq" => bool_to_value(&ValueWire::less_than_or_eq(a, b)),
+                "AGt" => bool_to_value(&ValueWire::greater_than(a, b)),
+                "AGEq" => bool_to_value(&ValueWire::greater_than_or_eq(a, b)),
                 "ABitAnd" => ValueWire::bit_and(a, b),
                 "ABitOr" => ValueWire::bit_or(a, b),
                 "AXor" => ValueWire::bit_xor(a, b),
@@ -109,10 +125,12 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
 
     let mut outputs = Vec::<CircuitOutput>::new();
 
-    for (name, i) in &arith_circuit.info.output_name_to_wire_index {
+    for output in &arith_circuit.info.outputs {
         outputs.push(CircuitOutput {
-            name: name.clone(),
-            value: wires[*i].clone().expect("Required wire not assigned"),
+            name: output.name.clone(),
+            value: wires[output.address]
+                .clone()
+                .expect("Required wire not assigned"),
         });
     }
 
@@ -128,6 +146,9 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     circuit
 }
 
-fn io_widths_all_1s(io_widths: &(Vec<usize>, Vec<usize>)) -> bool {
-    io_widths.0.iter().all(|&w| w == 1) && io_widths.1.iter().all(|&w| w == 1)
+fn io_widths_all_1s(info: &CircuitInfo) -> bool {
+    info.inputs
+        .iter()
+        .chain(info.outputs.iter())
+        .all(|io| io.width == 1)
 }

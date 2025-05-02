@@ -4,7 +4,8 @@ use std::{
     usize,
 };
 
-use bristol_circuit::{BristolCircuit, CircuitInfo, Gate};
+use bristol_circuit::{BristolCircuit, CircuitInfo, Gate, IOInfo};
+use serde_json::json;
 
 use crate::{
     bool_wire::{BoolData, BoolWire},
@@ -94,7 +95,16 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             .get_existing(input.id_start)
             .expect("Input should have an id");
 
-        info.input_name_to_wire_index.insert(input.name.clone(), id);
+        info.inputs.push(IOInfo {
+            name: input.name.clone(),
+            type_: if input.size == 1 {
+                json!("bool")
+            } else {
+                json!("number")
+            },
+            address: id,
+            width: input.size,
+        });
     }
 
     for output in &outputs {
@@ -104,24 +114,21 @@ pub fn generate_bristol(outputs: &Vec<CircuitOutput>) -> BristolCircuit {
             .get_existing(first.id().expect("Output should have an id"))
             .expect("Output should have an id");
 
-        info.output_name_to_wire_index
-            .insert(output.name.clone(), id);
+        info.outputs.push(IOInfo {
+            name: output.name.clone(),
+            type_: if output.value.bits.len() == 1 {
+                json!("bool")
+            } else {
+                json!("number")
+            },
+            address: id,
+            width: output.value.bits.len(),
+        });
     }
-
-    let input_widths = inputs
-        .values()
-        .map(|input| input.size)
-        .collect::<Vec<usize>>();
-
-    let output_widths = outputs
-        .iter()
-        .map(|output| output.value.bits.len())
-        .collect::<Vec<usize>>();
 
     BristolCircuit {
         wire_count: wire_id_mapper.map.len(),
         info,
-        io_widths: (input_widths, output_widths),
         gates,
     }
 }

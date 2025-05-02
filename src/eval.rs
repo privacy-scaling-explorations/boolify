@@ -5,30 +5,15 @@ use bristol_circuit::BristolCircuit;
 pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMap<String, usize> {
     let mut wires: Vec<Option<bool>> = vec![None; circuit.wire_count];
 
-    let mut sorted_inputs = circuit
-        .info
-        .input_name_to_wire_index
-        .iter()
-        .collect::<Vec<_>>();
+    for input in &circuit.info.inputs {
+        let value = inputs.get(&input.name).expect("missing input value");
 
-    sorted_inputs.sort_by(|a, b| a.1.cmp(b.1));
-
-    let (input_widths, output_widths) = &circuit.io_widths;
-
-    assert!(sorted_inputs.len() == input_widths.len());
-
-    for i in 0..sorted_inputs.len() {
-        let (name, id_start) = sorted_inputs[i];
-        let width = input_widths[i];
-
-        let value = inputs.get(name).expect("missing input value");
-
-        if width < (usize::BITS as usize) {
-            assert!(*value >> width == 0, "input value too large");
+        if input.width < (usize::BITS as usize) {
+            assert!(*value >> input.width == 0, "input value too large");
         }
 
-        for j in 0..width {
-            wires[id_start + j] = Some((value >> j) & 1 == 1);
+        for j in 0..input.width {
+            wires[input.address + j] = Some((value >> j) & 1 == 1);
         }
     }
 
@@ -68,27 +53,14 @@ pub fn eval(circuit: &BristolCircuit, inputs: &HashMap<String, usize>) -> HashMa
 
     let mut outputs = HashMap::<String, usize>::new();
 
-    let mut sorted_outputs = circuit
-        .info
-        .output_name_to_wire_index
-        .iter()
-        .collect::<Vec<_>>();
-
-    sorted_outputs.sort_by(|a, b| a.1.cmp(b.1));
-
-    assert!(sorted_outputs.len() == output_widths.len());
-
-    for i in 0..sorted_outputs.len() {
-        let (name, id_start) = sorted_outputs[i];
-        let width = output_widths[i];
-
+    for output in &circuit.info.outputs {
         let mut value = 0;
 
-        for j in 0..width {
-            value |= (wires[id_start + j].unwrap() as usize) << j;
+        for j in 0..output.width {
+            value |= (wires[output.address + j].unwrap() as usize) << j;
         }
 
-        outputs.insert(name.clone(), value);
+        outputs.insert(output.name.clone(), value);
     }
 
     outputs
