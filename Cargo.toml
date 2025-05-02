@@ -8,6 +8,6 @@ name = "boolify"
 path = "src/cli.rs"
 
 [dependencies]
-bristol-circuit = { git = "https://github.com/voltrevo/bristol-circuit", rev = "063d73a" }
+bristol-circuit = { git = "https://github.com/voltrevo/bristol-circuit", rev = "10ee9c7" }
 serde = "1.0"
 serde_json = "1.0"
