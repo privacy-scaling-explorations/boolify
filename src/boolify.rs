@@ -28,24 +28,22 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
             } else if input.type_ == "bool" {
                 1
             } else {
-                panic!("Unsupported input type: {}", input.type_)
+                panic!("Unsupported input type: {:?}", input.type_)
             },
             &id_gen,
         ));
     }
 
     for const_info in &arith_circuit.info.constants {
-        if let Some(v) = const_info.value.as_u64() {
+        if let Some(v) = const_info.value.as_f64() {
             wires[const_info.address] =
                 Some(ValueWire::new_const(v as usize, &id_gen).resize(bit_width));
-        }
-
-        if let Some(v) = const_info.value.as_bool() {
+        } else if let Some(v) = const_info.value.as_bool() {
             wires[const_info.address] =
                 Some(ValueWire::new_const(if v { 1 } else { 0 }, &id_gen).resize(1));
+        } else {
+            panic!("Unsupported type: {:?}", const_info.value);
         }
-
-        panic!("Unsupported type: {}", const_info.value);
     }
 
     let unary_ops = ["AUnaryAdd", "AUnarySub", "ANot", "ABitNot"]
