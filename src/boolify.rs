@@ -37,7 +37,7 @@ pub fn boolify(arith_circuit: &BristolCircuit, bit_width: usize) -> BristolCircu
     for const_info in &arith_circuit.info.constants {
         if let Some(v) = const_info.value.as_f64() {
             wires[const_info.address] =
-                Some(ValueWire::new_const(v as usize, &id_gen).resize(bit_width));
+                Some(ValueWire::new_const_f64(v, &id_gen).resize(bit_width));
         } else if let Some(v) = const_info.value.as_bool() {
             wires[const_info.address] =
                 Some(ValueWire::new_const(if v { 1 } else { 0 }, &id_gen).resize(1));
