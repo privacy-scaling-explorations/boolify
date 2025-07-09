@@ -53,6 +53,29 @@ impl ValueWire {
         }
     }
 
+    pub fn new_const_f64(value: f64, id_gen: &Rc<RefCell<IdGenerator>>) -> Self {
+        let mut bits = Vec::new();
+
+        let max_safe_int = 9007199254740991.0;
+        assert!(value >= 0.0 && value == value.trunc() && value <= max_safe_int);
+
+        let mut value = value as u64;
+
+        while value > 0 {
+            bits.push(Rc::new(BoolWire {
+                id_gen: id_gen.clone(),
+                data: BoolData::Const(value & 1 == 1),
+            }));
+
+            value >>= 1;
+        }
+
+        ValueWire {
+            id_gen: id_gen.clone(),
+            bits,
+        }
+    }
+
     pub fn as_usize(&self) -> Option<usize> {
         if self.bits.len() > (usize::BITS as usize) {
             return None;
